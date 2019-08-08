@@ -1,0 +1,29 @@
+data:
+  root: /mnt/lustre/reid/SIXray/data
+  train_list: /mnt/lustre/reid/SIXray/data/ImageSet/loc/train.csv
+  train_bboxes_list: /mnt/lustre/reid/SIXray/data/ImageSet/loc/train_bboxes.txt
+  test_list: /mnt/lustre/reid/SIXray/data/ImageSet/loc/test.csv
+  test_bboxes_list: /mnt/lustre/reid/SIXray/data/ImageSet/loc/test_bboxes.txt
+  train_img_size: 256
+  test_img_size: 224
+  train_batch_size: 320
+  test_batch_size: 128
+  flip: True
+  scale: 4
+  workers: 2
+model:
+  arch: resnet101_pose
+  num_classes: 5
+  pretrained: ''
+train:
+  total_iter: 50000
+  lr: 0.01
+  lr_iters: [30000]
+  lr_gamma: 0.1
+  momentum: 0.9
+  weight_decay: 0.0001
+use_kpt: True
+save_path: checkpoints/10/res101_chr_b320_iter50000
+save_freq: 5000
+print_freq: 10
+resume: False

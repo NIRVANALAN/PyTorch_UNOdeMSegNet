@@ -1,0 +1,34 @@
+data:
+  root: /work/06633/ylan/maverick2/data/dataset
+  train_list: /work/06633/ylan/maverick2/data/dataset/112_dataset/train_list_T4T4R.txt
+  test_list: /work/06633/ylan/maverick2/data/dataset/112_dataset/test_list_T4T4R.txt
+  train_img_size: 112
+  test_img_size: 112
+  train_batch_size: 40
+  test_batch_size: 40
+  workers: 2
+  rotate: 0
+model:
+  arch: resnet50
+  num_classes: 2
+  pretrained: '/home1/06633/ylan/.torch/models/resnet50-19c8e357.pth'
+  ignore: ['fc.weight', 'fc.bias']
+train:
+  total_iter: 10000
+  lr: 0.01
+  lr_iters: [30,50]
+  lr_gamma: 0.1
+  momentum: 0.9
+  weight_decay: 0.0001
+loss:
+#  pos_weight: [5.0, 5.0, 5.0, 5.0, 5.0]
+  kpt_weight: 0.0
+  cls_size_average: True
+  kpt_size_average: True
+  cls_loss: CE
+use_kpt: False
+epochs: 50
+save_path: checkpoints/microscopy/cls_resnet50_baseline_dataset112_debug
+save_freq: 1000
+print_freq: 10
+resume: False

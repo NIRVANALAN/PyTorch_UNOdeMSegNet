@@ -1,0 +1,39 @@
+data:
+  root: /mnt/lustre/share/reid/SIXray
+  train_list: /mnt/lustre/share/reid/SIXray/ImageSet/loc/train.csv
+  train_bboxes_list: /mnt/lustre/share/reid/SIXray/ImageSet/loc/train_bboxes.txt
+  test_list: /mnt/lustre/share/reid/SIXray/ImageSet/loc/test.csv
+  test_bboxes_list: /mnt/lustre/share/reid/SIXray/ImageSet/loc/test_bboxes.txt
+  train_img_size: 352
+  test_img_size: 320
+  train_batch_size: 320
+  test_batch_size: 128
+  flip: True
+  scale: 4
+  workers: 2
+  # aug:
+  #   p: 0.5
+  #   # alpha: 0.5
+  #   type: paste
+model:
+  arch: resnet101_pose
+  num_classes: 5
+  pretrained: '/mnt/lustre/sensetime1/.torch/models/resnet101-5d3b4d8f.pth'
+  ignore: ['fc.weight', 'fc.bias']
+train:
+  total_iter: 50000
+  lr: 0.01
+  lr_iters: [30000]
+  lr_gamma: 0.1
+  momentum: 0.9
+  weight_decay: 0.0001
+loss:
+  pos_weight: [5.0, 5.0, 5.0, 5.0, 5.0]
+  kpt_weight: 1.0
+  cls_size_average: True
+  kpt_size_average: True 
+use_kpt: True
+save_path: checkpoints/loc/res101_ros_4
+save_freq: 5000
+print_freq: 10
+resume: False
