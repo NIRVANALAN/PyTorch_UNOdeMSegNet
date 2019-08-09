@@ -18,7 +18,7 @@ MODELS = {
 }
 
 
-class ResNetUNet(nn.Module):
+class ResNet50UNet(nn.Module):
 
     def __init__(self, n_class, base_model='resnet50', pretrained=True, list_children=False, summary=False):
         super().__init__()

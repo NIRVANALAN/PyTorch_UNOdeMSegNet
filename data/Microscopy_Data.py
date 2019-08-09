@@ -35,8 +35,8 @@ def generate_mask(dataset, name, shape=112):
         if category[i] in organelles:
             mask = load_pil(osp.join(dataset, category[i], name))
 #             print(np.sum(mask))
-            if np.sum(mask) != 0:
-                print(category[i])
+            # if np.sum(mask) != 0:
+            #     print(category[i])
             # mask[mask == 1] = 255
             masks[i] = mask
 
