@@ -20,14 +20,12 @@ MODELS = {
 
 class ResNet50UNet(nn.Module):
 
-    def __init__(self, n_class, base_model='resnet50', pretrained=True, list_children=False, summary=False):
+    def __init__(self, n_class, base_model='resnet50', pretrained=True, list_children=True):
         super().__init__()
         if base_model in MODELS:
             self.base_model = MODELS[base_model](pretrained=pretrained)
             if list_children:
-                print(list(base_model.children()))
-            if summary:
-                print(summary(base_model, input_size=(1, 112, 112)))
+                print(list(self.base_model.children()))
         else:
             raise ValueError(f'base_model: {base_model} not in MODELZOO')
         self.base_layers = list(self.base_model.children())
