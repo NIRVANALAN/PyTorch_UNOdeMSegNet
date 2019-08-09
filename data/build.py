@@ -18,7 +18,7 @@ def build_train_loader(args):
     train_batch_size = args.data.train_batch_size
 
     train_loader = torch.utils.data.DataLoader(train_dataset,
-                                               batch_size=train_batch_size, shuffle=not args.distributed, num_workers=args.data.workers)
+                                               batch_size=train_batch_size, shuffle=True, num_workers=args.data.workers)
     return train_loader
 
 

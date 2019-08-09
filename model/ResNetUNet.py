@@ -30,7 +30,7 @@ class ResNetUNet(nn.Module):
                 print(summary(base_model, input_size=(1, 112, 112)))
         else:
             raise ValueError(f'base_model: {base_model} not in MODELZOO')
-        self.base_layers = list(base_model.children())
+        self.base_layers = list(self.base_model.children())
 
         # size=(N, 64, x.H/2, x.W/2)
         self.layer0 = nn.Sequential(*self.base_layers[:3])
