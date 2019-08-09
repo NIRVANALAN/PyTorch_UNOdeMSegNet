@@ -84,13 +84,14 @@ class MicroscopyDataset(Dataset):
         img = Image.open(os.path.join(self.root, path)).convert('RGB')
         img = img.resize((self.img_size, self.img_size), Image.BILINEAR)
         path_split = path.split('/')
-        dataset = '/'.join(path_split[:-2])
+        mask_dataset = '/'.join(path_split[:-2])
+        mask_dataset = os.path.join(self.root, mask_dataset)
         img_name = path_split[-1]
         # path_split[-2] = 'Mask'
         # path_split.insert(-1,'organelle')
 
         # mask
-        mask = generate_mask(dataset, img_name)
+        mask = generate_mask(mask_dataset, img_name)
 
         if self.transform is not None:
             img = self.transform(img)
