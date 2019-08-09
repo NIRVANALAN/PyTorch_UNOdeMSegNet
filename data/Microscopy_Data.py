@@ -8,10 +8,11 @@ import traceback
 import cv2
 import numpy as np
 from PIL import Image
+import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets, models, transforms
 
-from unet.util import simulation
+from util import simulation
 
 object_categories = ['T4', 'T4R', 'S1']
 category = ['Cytoskeleton', 'Desmosome', 'LipidDroplet', 'MitochondriaDark', 'MitochondriaLight', 'NuclearMembrane',
