@@ -19,21 +19,23 @@ category = ['Cytoskeleton', 'Desmosome', 'LipidDroplet', 'MitochondriaDark', 'Mi
             'PlasmaMembrane']
 
 
-def load_pil(img):
+def load_pil(img, shape=None):
     img = Image.open(img)
+    if shape:
+        img = img.resize((shape, shape), Image.BILINEAR)
     return np.array(img)
 
 
-def generate_mask(dataset, name, shape=112):
+def generate_mask(dataset, name, shape=192):
     dataset = osp.join(dataset, 'Mask')
     organelles = os.listdir(dataset)
 #     print(organelles)
     shapes = (shape, shape)
     masks = np.zeros((len(category), *shapes)).astype(np.float32)
-    print(f'masks shape: {masks.shape}')
+    #print(f'masks shape: {masks.shape}')
     for i in range(len(category)):
         if category[i] in organelles:
-            mask = load_pil(osp.join(dataset, category[i], name))
+            mask = load_pil(osp.join(dataset, category[i], name), shape=shape)
 #             print(np.sum(mask))
 #            if np.sum(mask) != 0:
 #                print(category[i])
@@ -63,8 +65,6 @@ def read_object_labels(file, header=True, shuffle=True):
 
 class MicroscopyDataset(Dataset):
     def __init__(self, root, train_list, img_size, transform=None, target_transform=None, crop_size=-1):
-        # self.input_images, self.target_masks = simulation.generate_random_data(
-        #     192, 192, count=count)
         self.transform = transform
         self.root = root
         self.img_size = img_size
@@ -88,11 +88,7 @@ class MicroscopyDataset(Dataset):
         mask_dataset = '/'.join(path_split[:-2])
         mask_dataset = os.path.join(self.root, mask_dataset)
         img_name = path_split[-1]
-        # path_split[-2] = 'Mask'
-        # path_split.insert(-1,'organelle')
-
-        # mask
-        mask = generate_mask(mask_dataset, img_name)
+        mask = generate_mask(mask_dataset, img_name, shape=self.img_size)
 
         if self.transform is not None:
             img = self.transform(img)

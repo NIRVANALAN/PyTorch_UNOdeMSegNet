@@ -1,4 +1,5 @@
 from collections import defaultdict
+from tqdm import tqdm
 import torch.nn.functional as F
 import torch
 from loss import dice_loss
@@ -53,7 +54,7 @@ def train_model(model, optimizer, scheduler, device, dataloaders, num_epochs=25)
             metrics = defaultdict(float)
             epoch_samples = 0
 
-            for inputs, labels in dataloaders[phase]:
+            for inputs, labels in tqdm(dataloaders[phase]):
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
