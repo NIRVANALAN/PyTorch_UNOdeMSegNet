@@ -7,7 +7,7 @@ import copy
 import yaml
 import argparse
 from easydict import EasyDict
-from model import ResNet18UNet, ResNet50UNet
+from model import ResNet18UNet, UNet
 from train import train_model
 from data import build_val_loader, build_train_loader
 import os
@@ -24,7 +24,10 @@ def main(args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.backends.cudnn.benchmark = True
-    model = ResNet18UNet(num_class).to(device)
+    if 'res' in args.model.arch:
+        model = ResNet18UNet(num_class).to(device)
+    else:
+        model = UNet(num_class).to(device)
 
     # freeze backbone layers
     # Comment out to finetune further
