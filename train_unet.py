@@ -24,8 +24,10 @@ def main(args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.backends.cudnn.benchmark = True
+    print(f'model.arch: {args.model.arch}')
     if 'res' in args.model.arch:
         model = ResNet18UNet(num_class).to(device)
+        print(model)
     else:
         model = UNet(num_class).to(device)
 
@@ -36,7 +38,7 @@ def main(args):
             param.requires_grad = False
 
     optimizer_ft = optim.Adam(
-        filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4)
+        filter(lambda p: p.requires_grad, model.parameters()), lr=args.train.lr)
 
     exp_lr_scheduler = lr_scheduler.StepLR(
         optimizer_ft, step_size=10, gamma=0.1)
