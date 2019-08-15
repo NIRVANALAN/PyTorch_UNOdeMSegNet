@@ -16,93 +16,103 @@ from util import simulation
 
 object_categories = ['T4', 'T4R', 'S1']
 category = ['Cytoskeleton', 'Desmosome', 'LipidDroplet', 'MitochondriaDark', 'MitochondriaLight', 'NuclearMembrane',
-            'PlasmaMembrane']
+			'PlasmaMembrane']
 
 
 def load_pil(img, shape=None):
-    img = Image.open(img)
-    if shape:
-        img = img.resize((shape, shape), Image.BILINEAR)
-    return np.array(img)
+	img = Image.open(img)
+	if shape:
+		img = img.resize((shape, shape), Image.BILINEAR)
+	return np.array(img)
 
 
-def generate_mask(dataset, name, shape=192):
-    dataset = osp.join(dataset, 'Mask')
-    organelles = os.listdir(dataset)
-#     print(organelles)
-    shapes = (shape, shape)
-    masks = np.zeros((len(category), *shapes)).astype(np.float32)
-    #print(f'masks shape: {masks.shape}')
-    for i in range(len(category)):
-        if category[i] in organelles:
-            mask = load_pil(osp.join(dataset, category[i], name), shape=shape)
-#             print(np.sum(mask))
-            # if np.sum(mask) != 0:
-            #     print(category[i])
-            # mask[mask == 1] = 255
-            masks[i] = mask
+def generate_mask(dataset, img_name, shape=192):
+	"""
 
-#     print(f'mask after gen: {masks.shape}')
-    return masks
+	:param dataset: 256_dataset/256/T4R/NA_T4R_122117_19/NA_T4R_122117_19
+	:param img_name: 11_5.png
+	:param shape: 256
+	:return: np.array -> (num_class, shape, shape)
+	"""
+	# dataset = osp.join(dataset, 'Mask')
+	all_slides = os.listdir('/'.join(dataset.split('/')[:-1]))
+	raw_slide_name = dataset.split('/')[-1]
+
+	shapes = (shape, shape)
+	masks = np.zeros((len(category), *shapes)).astype(np.float32)
+	# print(f'masks shape: {masks.shape}')
+	for i in range(len(category)):
+		if f'{raw_slide_name}_{category[i]}' in all_slides:
+			mask = load_pil(osp.join(f'{dataset}_{category[i]}', img_name), shape=shape)
+			masks[i] = mask
+
+	#     print(f'mask after gen: {masks.shape}')
+	return masks
 
 
 def read_object_labels(file, header=True, shuffle=True):
-    images = []
-    # num_categories = 0
-    print('[dataset] read', file)
-    with open(file, 'r') as f:
-        for line in f:
-            img, cell_type, mask_label = line.split(';')
-            cell_label = object_categories.index(cell_type)
-            mask_label = eval(mask_label.strip('\n'))
-            mask_label = (np.asarray(mask_label)).astype(np.float32)
-            mask_label = torch.from_numpy(mask_label)
-            images.append((img, cell_label, mask_label))
-    if shuffle:
-        random.shuffle(images)
-    return images
+	images = []
+	# num_categories = 0
+	print('[dataset] read', file)
+	with open(file, 'r') as f:
+		for line in f:
+			img, cell_type, mask_label = line.split(';')
+			cell_label = object_categories.index(cell_type)
+			mask_label = eval(mask_label.strip('\n'))
+			mask_label = (np.asarray(mask_label)).astype(np.float32)
+			mask_label = torch.from_numpy(mask_label)
+			images.append((img, cell_label, mask_label))
+	if shuffle:
+		random.shuffle(images)
+	return images
 
 
 class MicroscopyDataset(Dataset):
-    def __init__(self, root, train_list, img_size, transform=None, target_transform=None, crop_size=-1):
-        self.transform = transform
-        self.root = root
-        self.img_size = img_size
-        self.classes = category
-        self.transform = transform
-        self.crop_size = crop_size
-        self.target_transform = target_transform
-        self.images = read_object_labels(train_list)
+	def __init__(self, root, train_list, img_size, transform=None, target_transform=None, crop_size=-1):
+		self.transform = transform
+		self.root = root
+		self.img_size = img_size
+		self.classes = category
+		self.transform = transform
+		self.crop_size = crop_size
+		self.target_transform = target_transform
+		self.images = read_object_labels(train_list)
 
-    def __len__(self):
-        return len(self.images)
+	def __len__(self):
+		return len(self.images)
 
-    def get_number_classes(self):
-        return len(self.classes)
+	def get_number_classes(self):
+		return len(self.classes)
 
-    def __getitem__(self, index):
-        path, target, mask_target = self.images[index]
-        img = Image.open(os.path.join(self.root, path)).convert('RGB')
-        img = img.resize((self.img_size, self.img_size), Image.BILINEAR)
-        path_split = path.split('/')
-        mask_dataset = '/'.join(path_split[:-2])
-        mask_dataset = os.path.join(self.root, mask_dataset)
-        img_name = path_split[-1]
-        mask = generate_mask(mask_dataset, img_name, shape=self.img_size)
+	def __getitem__(self, index):
+		path, target = self.images[index]
+		img = Image.open(os.path.join(self.root, path)).convert('LA')  # gray scale
+		if img.shape[0] != self.img_size:
+			img = img.resize((self.img_size, self.img_size), Image.BILINEAR)
+		path_split = path.split('/')
+		# if target == 'S1':  # S1 stack hierarchy
+		# 	mask_dataset = '/'.join(path_split[:-2])
+		# 	pass
+		# else:
+		mask_dataset = '/'.join(path_split[:-1])
+		mask_dataset = os.path.join(self.root, mask_dataset)
+		img_name = path_split[-1]
+		mask = generate_mask(mask_dataset, img_name, shape=self.img_size)
 
-        if self.transform is not None:
-            img = self.transform(img)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
-        return [img, mask]
+		if self.transform is not None:
+			img = self.transform(img)
+		if self.target_transform is not None:
+			target = self.target_transform(target)
+		return [img, mask]
 
-    # def __getitem__(self, idx):
-    #     image = self.input_images[idx]
-    #     mask = self.target_masks[idx]
-    #     if self.transform:
-    #         image = self.transform(image)
 
-    #     return [image, mask]
+# def __getitem__(self, idx):
+#     image = self.input_images[idx]
+#     mask = self.target_masks[idx]
+#     if self.transform:
+#         image = self.transform(image)
+
+#     return [image, mask]
 
 
 # class MicroscopyClassification(data.Dataset):
@@ -118,6 +128,7 @@ class MicroscopyDataset(Dataset):
 
 #         self.classes = object_categories
 #         self.images = read_object_labels(train_list)
+
 
 #         print('[dataset] Microscopy classification number of classes=%d  number of images=%d' % (
 #             len(self.classes), len(self.images)))
@@ -146,11 +157,11 @@ class MicroscopyDataset(Dataset):
 
 
 def reverse_transform(inp):
-    inp = inp.numpy().transpose((1, 2, 0))
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-    inp = std * inp + mean
-    inp = np.clip(inp, 0, 1)
-    inp = (inp * 255).astype(np.uint8)
+	inp = inp.numpy().transpose((1, 2, 0))
+	mean = np.array([0.485, 0.456, 0.406])
+	std = np.array([0.229, 0.224, 0.225])
+	inp = std * inp + mean
+	inp = np.clip(inp, 0, 1)
+	inp = (inp * 255).astype(np.uint8)
 
-    return inp
+	return inp
