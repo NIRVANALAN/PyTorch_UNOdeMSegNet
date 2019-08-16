@@ -1,23 +1,23 @@
 data:
   root: /work/06633/ylan/maverick2/data/dataset
-  train_list: /work/06633/ylan/maverick2/data/dataset/112_dataset/train_list_T4T4RS1.txt
-  test_list: /work/06633/ylan/maverick2/data/dataset/112_dataset/test_list_T4T4RS1.txt
-  train_img_size: 192
-  test_img_size: 192
-  train_batch_size: 40
-  test_batch_size: 40
+  train_list: /work/06633/ylan/maverick2/data/dataset/512_dataset/512/train_list.txt
+  test_list: /work/06633/ylan/maverick2/data/dataset/512_dataset/512/test_list.txt
+  train_img_size: 572
+  test_img_size: 484 # output size
+  train_batch_size: 4
+  test_batch_size: 4
   workers: 2
   rotate: 0
 model:
   arch: UNet
-  num_classes: 7
+  num_classes: 8 # with BG as a class
   pretrained: ''
   ignore: ['fc.weight', 'fc.bias']
 train:
   total_iter: 10000
-  lr: 1.0
+  lr: 0.01
   lr_iters: [23,33,43,53,63,73,83,93]
-  lr_gamma: 0.1
+  lr_gamma: 0.01
   momentum: 0.9
   weight_decay: 0.0001
 loss:
@@ -27,8 +27,8 @@ loss:
   kpt_size_average: True
   cls_loss: CE
 use_kpt: False
-epochs: 50
-save_path: checkpoints/microscopy/unet
+epochs: 100
+save_path: checkpoints/microscopy/unet_lr0.01_momentum0.9
 save_freq: 1000
 print_freq: 10
 resume: False

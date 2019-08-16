@@ -1,2 +1,3 @@
 source source.sh
-python3 -u train_unet.py --config cfgs/res50_unet_192.yaml
+python3 -u bin.py --config cfgs/unet.yaml
+

@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 import torch
 from torch.utils.data import DataLoader, Dataset
+from torchvision.transforms.functional import vflip, hflip, rotate
 from torchvision import datasets, models, transforms
 
 from util import simulation
@@ -26,7 +27,7 @@ def load_pil(img, shape=None):
 	return np.array(img)
 
 
-def generate_mask(dataset, img_name, shape=192):
+def generate_mask(dataset, img_name, shape=484):
 	"""
 
 	:param dataset: 256_dataset/256/T4R/NA_T4R_122117_19/NA_T4R_122117_19
@@ -39,15 +40,15 @@ def generate_mask(dataset, img_name, shape=192):
 	raw_slide_name = dataset.split('/')[-1]
 
 	shapes = (shape, shape)
-	masks = np.zeros((len(category), *shapes)).astype(np.float32)
+	masks = np.zeros((len(category) + 1, *shapes)).astype(np.int_)  # long
 	# print(f'masks shape: {masks.shape}')
 	for i in range(len(category)):
 		if f'{raw_slide_name}_{category[i]}' in all_slides:
 			mask = load_pil(osp.join(f'{dataset}_{category[i]}', img_name), shape=shape)
-			masks[i] = mask
-
+			masks[i+1] = mask
+	target_mask = np.argmax(masks, 0)  # bg->0
 	#     print(f'mask after gen: {masks.shape}')
-	return masks
+	return target_mask
 
 
 def read_object_labels(file, header=True, shuffle=True):
@@ -56,22 +57,33 @@ def read_object_labels(file, header=True, shuffle=True):
 	print('[dataset] read', file)
 	with open(file, 'r') as f:
 		for line in f:
-			img, cell_type, mask_label = line.split(';')
-			cell_label = object_categories.index(cell_type)
-			mask_label = eval(mask_label.strip('\n'))
-			mask_label = (np.asarray(mask_label)).astype(np.float32)
-			mask_label = torch.from_numpy(mask_label)
-			images.append((img, cell_label, mask_label))
+			line_split = line.split(';')
+			if line_split.__len__() == 3:
+				img, cell_type, mask_label = line_split
+				cell_label = object_categories.index(cell_type)
+				mask_label = eval(mask_label.strip('\n'))
+				mask_label = (np.asarray(mask_label)).astype(np.float32)
+				mask_label = torch.from_numpy(mask_label)
+				images.append((img, cell_label, mask_label))
+			else:
+				img, cell_type = line_split
+				cell_label = object_categories.index(cell_type.strip('\n'))
+				images.append((img, cell_label))
 	if shuffle:
 		random.shuffle(images)
 	return images
 
 
 class MicroscopyDataset(Dataset):
-	def __init__(self, root, train_list, img_size, transform=None, target_transform=None, crop_size=-1):
+	def __init__(self, root, train_list, img_size, output_size, transform=None, target_transform=None, crop_size=-1,
+				 h_flip=True,
+				 v_flip=True):
 		self.transform = transform
 		self.root = root
+		self.h_flip = h_flip
+		self.v_flip = v_flip
 		self.img_size = img_size
+		self.output_size = output_size
 		self.classes = category
 		self.transform = transform
 		self.crop_size = crop_size
@@ -86,8 +98,9 @@ class MicroscopyDataset(Dataset):
 
 	def __getitem__(self, index):
 		path, target = self.images[index]
-		img = Image.open(os.path.join(self.root, path)).convert('LA')  # gray scale
-		if img.shape[0] != self.img_size:
+		# img = Image.open(os.path.join(self.root, path)).convert('LA')  # gray scale
+		img = Image.open(os.path.join(self.root, path)).convert('RGB')  # gray scale
+		if img.size[0] != self.img_size:
 			img = img.resize((self.img_size, self.img_size), Image.BILINEAR)
 		path_split = path.split('/')
 		# if target == 'S1':  # S1 stack hierarchy
@@ -97,7 +110,17 @@ class MicroscopyDataset(Dataset):
 		mask_dataset = '/'.join(path_split[:-1])
 		mask_dataset = os.path.join(self.root, mask_dataset)
 		img_name = path_split[-1]
-		mask = generate_mask(mask_dataset, img_name, shape=self.img_size)
+		mask = generate_mask(mask_dataset, img_name, shape=self.output_size)
+
+		if self.h_flip:
+			if np.random.random() < 0.5:
+				img = hflip(img)
+				mask = np.flip(mask, 1).copy()
+
+		if self.v_flip:
+			if np.random.random() < 0.5:
+				img = vflip(img)
+				mask = np.flip(mask, 0).copy()
 
 		if self.transform is not None:
 			img = self.transform(img)

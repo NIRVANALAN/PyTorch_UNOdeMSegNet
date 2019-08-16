@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import torch.optim as optim
+import pdb
 
 
 class UNet(nn.Module):
@@ -78,11 +79,12 @@ class UNet(nn.Module):
 		self.conv_decode2 = self.expansive_block(256, 128, 64)
 		self.final_layer = self.final_block(128, 64, out_channel)
 
-	def crop_and_concat(self, upsampled, bypass, crop=False):
+	def crop_and_concat(self, upsampled, bypass, crop=True):
 		"""
 		This layer crop the layer from contraction block and concat it with expansive block vector
 		"""
 		if crop:
+			# pdb.set_trace()
 			c = (bypass.size()[2] - upsampled.size()[2]) // 2
 			bypass = F.pad(bypass, (-c, -c, -c, -c))  # pad the last 2 dimensions. Use -c to subsample rather than
 		# add pixels

@@ -13,6 +13,7 @@ from train.train import train_model
 from data import build_val_loader, build_train_loader
 import os
 import sys
+from util.loss import PixelCELoss
 
 if not os.getcwd() in sys.path:
 	sys.path.append(os.getcwd())
@@ -28,7 +29,7 @@ def main(args):
 	torch.backends.cudnn.benchmark = True
 	print(f'model.arch: {args.model.arch}')
 
-	model = UNet(1, num_class).to(device)
+	model = UNet(3, num_class).to(device)
 	# if 'res' in args.model.arch:
 	# 	model = ResNet18UNet(num_class).to(device)
 	# print(model)
@@ -37,14 +38,14 @@ def main(args):
 
 	# freeze backbone layers
 	# Comment out to finetune further
-	for l in model.base_layers:
-		for param in l.parameters():
-			param.requires_grad = False
+	# for l in model.base_layers:
+	# 	for param in l.parameters():
+	# 		param.requires_grad = False
 
 	# optimizer_ft = optim.Adam(
 	# 	filter(lambda p: p.requires_grad, model.parameters()), lr=args.train.lr)
 
-	optimizer = torch.optim.SGD(model.parameters(), lr=args.train.lr, momentum=0.99)
+	optimizer = torch.optim.SGD(model.parameters(), lr=args.train.lr, momentum=args.train.momentum)
 	exp_lr_scheduler = lr_scheduler.MultiStepLR(
 		optimizer, milestones=args.train.lr_iters, gamma=0.1)
 	num_epochs = args.get('epochs', 100)
@@ -57,7 +58,7 @@ def main(args):
 	}
 
 	torch.cuda.empty_cache()
-	criterion = nn.CrossEntropyLoss()
+	criterion = PixelCELoss(num_classes=num_class)
 	model = train_model(model, optimizer, exp_lr_scheduler,
 						device, dataloaders, criterion=criterion, num_epochs=num_epochs, args=args)
 

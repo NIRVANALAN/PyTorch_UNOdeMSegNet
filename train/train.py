@@ -2,10 +2,12 @@ from collections import defaultdict
 from tqdm import tqdm, trange
 import torch.nn.functional as F
 import torch
-from loss import dice_loss
+from torch import autograd
 import time
+import pdb
 import copy
 import os
+import gc
 
 
 # def calc_loss(pred, target, metrics, bce_weight=0.5):
@@ -22,6 +24,14 @@ import os
 #
 # 	return loss
 
+def calc_seg_acc(outputs, target):
+	# pdb.set_trace()
+	pred = torch.argmax(outputs, 1)  # reduce channel dim
+	N, H, W = target.size()
+	acc = (pred == target).sum().to(torch.float) / (N * H * W)
+	return acc.data.cpu().numpy()
+	# print(f'segmentation acc: {acc * 100:5.2f}%')
+
 
 def print_metrics(metrics, epoch_samples, phase):
 	outputs = []
@@ -31,67 +41,71 @@ def print_metrics(metrics, epoch_samples, phase):
 	print("{}: {}".format(phase, ", ".join(outputs)))
 
 
-def train_model(model, optimizer, scheduler, device, dataloaders, criterion,num_epochs=25, args=None):
+def train_model(model, optimizer, scheduler, device, dataloaders, criterion, num_epochs=25, args=None):
 	best_model_wts = copy.deepcopy(model.state_dict())
 	best_loss = 1e10
 
 	t = range(num_epochs)
 
-	for _ in t:
-		# print('Epoch {}/{}'.format(epoch, num_epochs - 1))
-		# print('-' * 10)
+	with autograd.detect_anomaly():
+		for _ in t:
+			total_loss = 0
+			print('Epoch {}/{}'.format(_ + 1, num_epochs - 1))
+			# print('-' * 10)
 
-		since = time.time()
+			since = time.time()
 
-		# Each epoch has a training and validation phase
-		for phase in ['train', 'val']:
-			if phase == 'train':
-				scheduler.step()
-				for param_group in optimizer.param_groups:
-					print("LR", param_group['lr'])
+			# Each epoch has a training and validation phase
+			for phase in ['train', 'val']:
+				if phase == 'train':
+					scheduler.step()
+					for param_group in optimizer.param_groups:
+						print("LR", param_group['lr'])
+					model.train()  # Set model to training mode
+				else:
+					model.eval()  # Set model to evaluate mode
 
-				model.train()  # Set model to training mode
-			else:
-				model.eval()  # Set model to evaluate mode
+				metrics = defaultdict(float)
+				epoch_samples = 0
+				gc.collect()
 
-			metrics = defaultdict(float)
-			epoch_samples = 0
+				for inputs, labels in tqdm(dataloaders[phase]):
+					inputs = inputs.to(device)
+					labels = labels.to(device)  # BC * channel
 
-			for inputs, labels in tqdm(dataloaders[phase]):
-				inputs = inputs.to(device)
-				labels = labels.to(device)
+					# zero the parameter gradients
+					optimizer.zero_grad()
 
-				# zero the parameter gradients
-				optimizer.zero_grad()
+					# forward
+					# track history if only in train
+					with torch.set_grad_enabled(phase == 'train'):
+						# pdb.set_trace()
+						outputs = model(inputs)
+						loss = criterion(outputs, labels)
+						metrics['seg_acc'] += calc_seg_acc(outputs, labels) * labels.size(0)
+						metrics['loss'] += loss.data.cpu().numpy() * labels.size(0)
+						# total_loss += loss
 
-				# forward
-				# track history if only in train
-				with torch.set_grad_enabled(phase == 'train'):
-					outputs = model(inputs)
-					# outputs.shape =(batch_size, n_classes, img_cols, img_rows)
-					outputs = outputs.permute(0, 2, 3, 1)
-					outputs = outputs.reshape(-1, outputs.shape[3])
-					# outputs.shape =(batch_size, img_cols, img_rows, n_classes)
-					loss = criterion(outputs, labels)
+						# loss = calc_loss(outputs, labels, metrics)
 
-					# loss = calc_loss(outputs, labels, metrics)
+						# backward + optimize only if in training phase
+						if phase == 'train':
+							loss.backward()
+							optimizer.step()
 
-					# backward + optimize only if in training phase
-					if phase == 'train':
-						loss.backward()
-						optimizer.step()
+					# statistics
+					epoch_samples += inputs.size(0)
+				# print(f"Total loss in epoch {_ + 1} : {total_loss / epoch_samples}")
 
-				# statistics
-				epoch_samples += inputs.size(0)
+				print_metrics(metrics, epoch_samples, phase)
+				epoch_loss = metrics['loss'] / epoch_samples
+				gc.collect()
 
-			print_metrics(metrics, epoch_samples, phase)
-			epoch_loss = metrics['loss'] / epoch_samples
-
-			# deep copy the model
-			if phase == 'val' and epoch_loss < best_loss:
-				print("saving best model")
-				best_loss = epoch_loss
-				best_model_wts = copy.deepcopy(model.state_dict())
+				# deep copy the model
+				if phase == 'val' and epoch_loss < best_loss:
+					print("saving best model")
+					best_loss = epoch_loss
+					best_model_wts = copy.deepcopy(model.state_dict())
 
 		time_elapsed = time.time() - since
 		print('{:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
