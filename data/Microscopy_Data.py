@@ -27,9 +27,11 @@ def load_pil(img, shape=None):
 	return np.array(img)
 
 
-def generate_mask(dataset, img_name, shape=484):
+def generate_mask(dataset, img_name, shape=484, single_channel_target=False, include_bg=True):
 	"""
 
+	:param include_bg: whether include BG mask as a class
+	:param single_channel_target: return stacked or not
 	:param dataset: 256_dataset/256/T4R/NA_T4R_122117_19/NA_T4R_122117_19
 	:param img_name: 11_5.png
 	:param shape: 256
@@ -40,15 +42,34 @@ def generate_mask(dataset, img_name, shape=484):
 	raw_slide_name = dataset.split('/')[-1]
 
 	shapes = (shape, shape)
-	masks = np.zeros((len(category) + 1, *shapes)).astype(np.int_)  # long
-	# print(f'masks shape: {masks.shape}')
-	for i in range(len(category)):
-		if f'{raw_slide_name}_{category[i]}' in all_slides:
-			mask = load_pil(osp.join(f'{dataset}_{category[i]}', img_name), shape=shape)
-			masks[i+1] = mask
-	target_mask = np.argmax(masks, 0)  # bg->0
+	if single_channel_target:
+		masks = np.zeros((len(category) + 1, *shapes)).astype(np.int_)  # long
+		# print(f'masks shape: {masks.shape}')
+		for i in range(len(category)):
+			if f'{raw_slide_name}_{category[i]}' in all_slides:
+				mask = load_pil(osp.join(f'{dataset}_{category[i]}', img_name), shape=shape)
+				masks[i + 1] = mask
+		target_mask = np.argmax(masks, 0)  # bg->0
+	elif include_bg:
+		masks = np.zeros((len(category), *shapes)).astype(np.float_)  # long
+		# print(f'masks shape: {masks.shape}')
+		for i in range(len(category)):
+			if f'{raw_slide_name}_{category[i]}' in all_slides:
+				mask = load_pil(osp.join(f'{dataset}_{category[i]}', img_name), shape=shape)
+				masks[i] = mask
+		bg_mask = np.expand_dims(1 - np.clip(np.sum(masks, 0), 0, 1), axis=0)  # 1 * H * W. some pixels have
+		# multi-label, visualization is needed
+		target_mask = np.concatenate((bg_mask, masks), axis=0)  # 8*H*W, zero dimension as BG
+	else:
+		masks = np.zeros((len(category), *shapes)).astype(np.float_)  # long
+		# print(f'masks shape: {masks.shape}')
+		for i in range(len(category)):
+			if f'{raw_slide_name}_{category[i]}' in all_slides:
+				mask = load_pil(osp.join(f'{dataset}_{category[i]}', img_name), shape=shape)
+				masks[i] = mask
+		target_mask = masks
 	#     print(f'mask after gen: {masks.shape}')
-	return target_mask
+	return target_mask.astype(np.float32)
 
 
 def read_object_labels(file, header=True, shuffle=True):
@@ -77,7 +98,7 @@ def read_object_labels(file, header=True, shuffle=True):
 class MicroscopyDataset(Dataset):
 	def __init__(self, root, train_list, img_size, output_size, transform=None, target_transform=None, crop_size=-1,
 				 h_flip=True,
-				 v_flip=True):
+				 v_flip=True, single_channel_target=False, include_bg=True):
 		self.transform = transform
 		self.root = root
 		self.h_flip = h_flip
@@ -89,6 +110,8 @@ class MicroscopyDataset(Dataset):
 		self.crop_size = crop_size
 		self.target_transform = target_transform
 		self.images = read_object_labels(train_list)
+		self.single_channel_target = single_channel_target
+		self.include_bg = include_bg
 
 	def __len__(self):
 		return len(self.images)
@@ -98,8 +121,8 @@ class MicroscopyDataset(Dataset):
 
 	def __getitem__(self, index):
 		path, target = self.images[index]
-		# img = Image.open(os.path.join(self.root, path)).convert('LA')  # gray scale
-		img = Image.open(os.path.join(self.root, path)).convert('RGB')  # gray scale
+		img = Image.open(os.path.join(self.root, path)).convert('LA')  # gray scale
+		# img = Image.open(os.path.join(self.root, path)).convert('RGB')  # gray scale
 		if img.size[0] != self.img_size:
 			img = img.resize((self.img_size, self.img_size), Image.BILINEAR)
 		path_split = path.split('/')
@@ -110,7 +133,8 @@ class MicroscopyDataset(Dataset):
 		mask_dataset = '/'.join(path_split[:-1])
 		mask_dataset = os.path.join(self.root, mask_dataset)
 		img_name = path_split[-1]
-		mask = generate_mask(mask_dataset, img_name, shape=self.output_size)
+		mask = generate_mask(mask_dataset, img_name, shape=self.output_size,
+							 single_channel_target=self.single_channel_target, include_bg=self.include_bg)
 
 		if self.h_flip:
 			if np.random.random() < 0.5:

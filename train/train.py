@@ -28,9 +28,11 @@ def calc_seg_acc(outputs, target):
 	# pdb.set_trace()
 	pred = torch.argmax(outputs, 1)  # reduce channel dim
 	N, H, W = target.size()
-	acc = (pred == target).sum().to(torch.float) / (N * H * W)
+	acc = (pred == target).sum().to(torch.float) / (N * H * W) * 100
 	return acc.data.cpu().numpy()
-	# print(f'segmentation acc: {acc * 100:5.2f}%')
+
+
+# print(f'segmentation acc: {acc * 100:5.2f}%')
 
 
 def print_metrics(metrics, epoch_samples, phase):
@@ -44,13 +46,14 @@ def print_metrics(metrics, epoch_samples, phase):
 def train_model(model, optimizer, scheduler, device, dataloaders, criterion, num_epochs=25, args=None):
 	best_model_wts = copy.deepcopy(model.state_dict())
 	best_loss = 1e10
+	best_acc = 1e-10
 
 	t = range(num_epochs)
 
 	with autograd.detect_anomaly():
 		for _ in t:
 			total_loss = 0
-			print('Epoch {}/{}'.format(_ + 1, num_epochs - 1))
+			print('Epoch {}/{}'.format(_, num_epochs - 1))
 			# print('-' * 10)
 
 			since = time.time()
@@ -99,27 +102,37 @@ def train_model(model, optimizer, scheduler, device, dataloaders, criterion, num
 
 				print_metrics(metrics, epoch_samples, phase)
 				epoch_loss = metrics['loss'] / epoch_samples
+				epoch_acc = metrics['seg_acc'] / epoch_samples
 				gc.collect()
 
 				# deep copy the model
 				if phase == 'val' and epoch_loss < best_loss:
 					print("saving best model")
 					best_loss = epoch_loss
+					best_acc = epoch_acc
 					best_model_wts = copy.deepcopy(model.state_dict())
+
+					checkpoint = {'model': model,
+								  'state_dict': model.state_dict(),
+								  'optimizer': optimizer.state_dict()}
+					save_path = args.save_path
+					if not os.path.isdir(save_path):
+						os.mkdir(save_path)
+					torch.save(checkpoint, os.path.join(save_path, f"epoch{_}_acc{best_acc}.pth"))
 
 		time_elapsed = time.time() - since
 		print('{:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
 
-	print('Best val loss: {:4f}'.format(best_loss))
+	print('Best val loss: {:4f}, acc: {:.4f}%'.format(best_loss, best_acc))
 
 	# load best model weights
 	model.load_state_dict(best_model_wts)
 
-	checkpoint = {'model': model,
-				  'state_dict': model.state_dict(),
-				  'optimizer': optimizer.state_dict()}
-	save_path = args.save_path
-	if not os.path.isdir(save_path):
-		os.mkdir(save_path)
-	torch.save(checkpoint, os.path.join(save_path, 'checkpoint.pth'))
+	# checkpoint = {'model': model,
+	# 			  'state_dict': model.state_dict(),
+	# 			  'optimizer': optimizer.state_dict()}
+	# save_path = args.save_path
+	# if not os.path.isdir(save_path):
+	# 	os.mkdir(save_path)
+	# torch.save(checkpoint, os.path.join(save_path, 'checkpoint.pth'))
 	return model

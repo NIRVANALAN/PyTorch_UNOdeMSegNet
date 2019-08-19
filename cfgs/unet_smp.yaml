@@ -1,21 +1,21 @@
 data:
   root: /work/06633/ylan/maverick2/data/dataset
-  train_list: /work/06633/ylan/maverick2/data/dataset/512_dataset/512/list/train_list_filter_1000.txt
+  train_list: /work/06633/ylan/maverick2/data/dataset/512_dataset/512/list/train_list_filter.txt
   test_list: /work/06633/ylan/maverick2/data/dataset/512_dataset/512/list/test_list_filter.txt
-  train_img_size: 572
-  test_img_size: 484 # output size
-  train_batch_size: 4
-  test_batch_size: 4
+  train_img_size: 512
+  test_img_size: 512 # output size
+  train_batch_size: 6
+  test_batch_size: 6
   workers: 4
   rotate: 0
 model:
-  arch: UNet
+  arch: se_resnet50
   num_classes: 8 # with BG as a class
   pretrained: ''
   ignore: ['fc.weight', 'fc.bias']
 train:
   total_iter: 10000
-  lr: 0.01
+  lr: 0.1
   lr_iters: [23,33,43,53,63,73,83,93]
   lr_gamma: 0.01
   momentum: 0.99
@@ -27,4 +27,4 @@ loss:
   kpt_size_average: True
   cls_loss: CE
 epochs: 100
-save_path: checkpoints/microscopy/unet_lr0.01_momentum0.99_filtered_data_1000
+save_path: checkpoints/microscopy/unet_lr0.01_momentum0.99_smp_se_resnet50_softmax
