@@ -1,6 +1,61 @@
 from segmentation_models_pytorch.utils.functions import *
+import torch
 import numpy as np
 import pdb
+
+
+def miou(pr, gt, ignore_index=None, eps=1e-7):
+	"""
+		float: mean IoU
+		:param ignore_index: channel to ignore
+		:param gt: C*H*W
+		:param pr: C*H*W
+		:param eps: epsilon
+	"""
+
+	assert pr.dim() == 4 and gt.dim() == 4  # multi class segmentation
+	class_gt_sum = torch.sum(gt, (2, 3)).to(torch.float)
+	class_pr_sum = torch.sum(pr, (2, 3)).to(torch.float)
+	class_intersection = torch.sum(gt * pr, (2, 3))
+	class_union = class_gt_sum + class_pr_sum - class_intersection + eps
+	if ignore_index is not None:
+		if isinstance(ignore_index, int):
+			ignore_index = [ignore_index]
+		for i in ignore_index:
+			class_intersection[i] = 0
+	iou = ((class_intersection + eps) / class_union)
+	pdb.set_trace()
+	return iou.mean()
+
+
+def mpa(pr, gt, ignore_index=None):
+	"""
+		float: mean pixel acc
+		:param ignore_index: ignored channel
+		:param gt: N*C*H*W
+		:param pr: N*C*H*W
+	"""
+
+	assert pr.dim() == 4 and gt.dim() == 4  # multi class segmentation
+	class_true = torch.sum(gt == pr, (2, 3)).to(torch.float)
+	channel_size = gt.shape[2:]
+	pa = class_true / (channel_size[0] * channel_size[1])
+	if ignore_index is not None:
+		if isinstance(ignore_index, int):
+			ignore_index = [ignore_index]
+		for i in ignore_index:
+			pa[i] = 0
+
+	# class_union = class_gt_sum + class_pr_sum - class_true
+	return pa.mean()
+
+
+# return ((class_intersection + eps) / class_union).mean()
+
+
+# intersection = torch.sum(gt * pr)
+# union = torch.sum(gt) + torch.sum(pr) - intersection + eps
+# return (intersection + eps) / union
 
 
 def confusion_matrix(predicted, target, num_classes, normalized=False):

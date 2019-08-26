@@ -16,6 +16,7 @@ import argparse
 from easydict import EasyDict
 from data import build_val_loader, build_train_loader
 from util.metrics import MIoUMetric, MPAMetric
+from util.loss import PixelCELoss
 
 
 def main(args):
@@ -27,31 +28,34 @@ def main(args):
 		activation='softmax',  # whatever, will do .max during metrics calculation
 		classes=num_classes
 	)
-	loss = smp.utils.losses.BCEDiceLoss(eps=1.)
+	# loss = smp.utils.losses.BCEDiceLoss(eps=1., activation='softmax2d')
+	criterion = PixelCELoss(num_classes=num_classes)
 	metrics = [
-		MIoUMetric(num_classes=num_classes),
-		MPAMetric(num_classes=num_classes)
+		# MIoUMetric(num_classes=num_classes, ignore_index=0),
+		MIoUMetric(num_classes=num_classes, ignore_index=None),
+		MPAMetric(num_classes=num_classes, ignore_index=None)  # ignore background
 	]
 
 	device = 'cuda'
+	lr = args.train.lr
 	optimizer = torch.optim.Adam([
-		{'params': model.decoder.parameters(), 'lr': 1e-2},
+		{'params': model.decoder.parameters(), 'lr': lr},
 
 		# decrease lr for encoder in order not to permute
 		# pre-trained weights with large gradients on training start
-		{'params': model.encoder.parameters(), 'lr': 1e-2},
+		{'params': model.encoder.parameters(), 'lr': lr},
 	])
 	# optimizer = torch.optim.SGD(model.parameters(), lr=args.train.lr, momentum=args.train.momentum)
 	# dataset
-	args.pixel_ce = False
-	train_loader = build_train_loader(args)
-	valid_loader = build_val_loader(args)
+	args.pixel_ce = True
+	train_loader, _ = build_train_loader(args)
+	valid_loader, _ = build_val_loader(args)
 
 	# create epoch runners
 	# it is a simple loop of iterating over dataloader`s samples
 	train_epoch = smp.utils.train.TrainEpoch(
 		model,
-		loss=loss,
+		loss=criterion,
 		metrics=metrics,
 		optimizer=optimizer,
 		device=device,
@@ -60,7 +64,7 @@ def main(args):
 
 	valid_epoch = smp.utils.train.ValidEpoch(
 		model,
-		loss=loss,
+		loss=criterion,
 		metrics=metrics,
 		device=device,
 		verbose=True,
@@ -75,7 +79,7 @@ def main(args):
 
 	for i in range(0, num_epochs):
 
-		print('\nEpoch: {}'.format(i))
+		print('\nEpoch: {}  lr: {}'.format(i, optimizer.param_groups[0]['lr']))
 		train_logs = train_epoch.run(train_loader)
 		valid_logs = valid_epoch.run(valid_loader)
 
@@ -88,9 +92,11 @@ def main(args):
 				os.makedirs(args.save_path)
 			torch.save(model, os.path.join(args.save_path, f'./{max_score}.pth'))
 			print(f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}')
-	# if i == 25:
-	# 	optimizer.param_groups[0]['lr'] = 1e-4
-	# 	print('Decrease decoder learning rate to 1e-4!')
+
+
+# if i == 25:
+# 	optimizer.param_groups[0]['lr'] = 1e-4
+# 	print('Decrease decoder learning rate to 1e-4!')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,21 @@
+data:
+  root: /work/06633/ylan/maverick2/data/dataset/raw/extracted_data/raw
+  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/64/0.5/train_list.txt
+  test_list: /work/06633/ylan/maverick2/data/dataset/dataset/64/0.5/test_list.txt
+#  test_list: /work/06633/ylan/maverick2/data/dataset/1024_dataset/1024/S1/S1_Helios_1of3_v1
+#  /S1_Helios_1of3_v1270_all_list.txt
+#  slide_path: S1_Helios_1of3_v1270.tiff
+#  slide_path: NA_T4_122117_11.tif
+  slide_path: NA_T4R_122117_19.tif
+  train_img_size: 64
+  test_img_size: 64 # output size
+  train_batch_size: 32
+  test_batch_size: 32
+  workers: 4
+  rotate: 0
+single_channel_target: False
+save_path: inference/
+#save_path: inference/T4/122117_11
+#best_model: checkpoints/microscopy/64_se50_bc32_0.5/0.2900565167268117.pth
+best_model: checkpoints/microscopy/64/ts0.5_ex0.2_bg0.05_200iter/0.5705835337224217.pth
+inference: True

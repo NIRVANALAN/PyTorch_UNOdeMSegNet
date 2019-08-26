@@ -1,9 +1,13 @@
 import torch.nn as nn
+import warnings
 import numpy as np
 import torch
 from .functions import *
 
 
+# warnings.filterwarnings("error")
+
+#
 # class IoUMetric(nn.Module):
 # 	__name__ = 'iou'
 #
@@ -16,19 +20,54 @@ from .functions import *
 # 	def forward(self, y_pr, y_gt):
 # 		return F.iou(y_pr, y_gt, self.eps, self.threshold, self.activation)
 #
+# #
+# class MPAMetric(nn.Module):
+# 	__name__ = 'mpa'
 #
-# class FscoreMetric(nn.Module):
-# 	__name__ = 'f-score'
-#
-# 	def __init__(self, beta=1, eps=1e-7, threshold=0.5, activation='sigmoid'):
+# 	def __init__(self, activate='one_hot', ignore_index=None):
 # 		super().__init__()
-# 		self.activation = activation
-# 		self.eps = eps
-# 		self.threshold = threshold
-# 		self.beta = beta
+# 		self.ignore_index = ignore_index
+# 		self.activate = activate
 #
-# 	def forward(self, y_pr, y_gt):
-# 		return F.f_score(y_pr, y_gt, self.beta, self.eps, self.threshold, self.activation)
+# 	def forward(self, pr, gt):
+# 		if pr.dim() == 4 and self.activate == 'one_hot':  # N*C*H*W
+# 			one_hot_pr = torch.zeros_like(pr)
+# 			idx = pr.argmax(1)
+# 			one_hot_pr[np.arange(pr.shape[0])[:, None, None, None], idx, np.arange(pr.shape[2])[None, None, :,
+# 																		 None], np.arange(pr.shape[3])[None, None, None,
+# 																				:]] = 1
+# 			return mpa(one_hot_pr, gt, ignore_index=self.ignore_index)
+# 		return mpa(pr, gt, ignore_index=self.ignore_index)
+
+
+#
+#
+# class MeanIoUMetric(nn.Module):
+# 	__name__ = 'mean_iou'
+#
+# 	def __init__(self, activate='one_hot', ignore_index=None):
+# 		super().__init__()
+# 		self.ignore_index = ignore_index
+# 		self.activate = activate
+#
+# 	def forward(self, pr, gt):
+# 		if pr.dim() == 4 and self.activate == 'one_hot':  # N*C*H*W
+# 			one_hot_pr = torch.zeros_like(pr)
+# 			# pdb.set_trace()
+# 			idx = pr.argmax(1)
+#
+# 			# for bc in range(pr.shape[0]):
+# 			# 	for h in range(pr.shape[2]):
+# 			# 		for w in range(pr.shape[3]):
+# 			# 			one_hot_pr[bc][idx[bc][h][w]][h][w] = 1
+# 			# one_hot_mask[mask[i][j]][i][j] = 1
+#
+# 			one_hot_pr[np.arange(pr.shape[0])[:, None, None, None], idx, np.arange(pr.shape[2])[None, None, :,
+# 																		 None], np.arange(pr.shape[3])[None, None, None,
+# 																				:]] = 1
+# 			pdb.set_trace()
+# 			return miou(one_hot_pr, gt, ignore_index=self.ignore_index)
+# 		return miou(pr, gt, ignore_index=self.ignore_index)
 
 
 class Metric(object):
@@ -68,53 +107,6 @@ class ConfusionMatrix(Metric):
 		self.conf.fill(0)
 
 	def add(self, predicted, target):
-		# """Computes the confusion matrix
-		# The shape of the confusion matrix is K x K, where K is the number
-		# of classes.
-		# Keyword arguments:
-		# - predicted (Tensor or numpy.ndarray): Can be an N x K tensor/array of
-		# predicted scores obtained from the model for N examples and K classes,
-		# or an N-tensor/array of integer values between 0 and K-1.
-		# - target (Tensor or numpy.ndarray): Can be an N x K tensor/array of
-		# ground-truth classes for N examples and K classes, or an N-tensor/array
-		# of integer values between 0 and K-1.
-		# """
-		# # If target and/or predicted are tensors, convert them to numpy arrays
-		# if torch.is_tensor(predicted):
-		# 	predicted = predicted.cpu().numpy()
-		# if torch.is_tensor(target):
-		# 	target = target.cpu().numpy()
-		#
-		# assert predicted.shape[0] == target.shape[0], \
-		# 	'number of targets and predicted outputs do not match'
-		#
-		# if np.ndim(predicted) != 1:
-		# 	assert predicted.shape[1] == self.num_classes, \
-		# 		'number of predictions does not match size of confusion matrix'
-		# 	predicted = np.argmax(predicted, 1)
-		# else:
-		# 	assert (predicted.max() < self.num_classes) and (predicted.min() >= 0), \
-		# 		'predicted values are not between 0 and k-1'
-		#
-		# if np.ndim(target) != 1:
-		# 	assert target.shape[1] == self.num_classes, \
-		# 		'Onehot target does not match size of confusion matrix'
-		# 	assert (target >= 0).all() and (target <= 1).all(), \
-		# 		'in one-hot encoding, target values should be 0 or 1'
-		# 	assert (target.sum(1) == 1).all(), \
-		# 		'multi-label setting is not supported'
-		# 	target = np.argmax(target, 1)
-		# else:
-		# 	assert (target.max() < self.num_classes) and (target.min() >= 0), \
-		# 		'target values are not between 0 and k-1'
-		#
-		# # hack for bincounting 2 arrays together
-		# x = predicted + self.num_classes * target
-		# bincount_2d = np.bincount(
-		# 	x.astype(np.int32), minlength=self.num_classes ** 2)
-		# assert bincount_2d.size == self.num_classes ** 2
-		# conf = bincount_2d.reshape((self.num_classes, self.num_classes))
-
 		self.conf += confusion_matrix(predicted, target, self.num_classes)
 
 	def value(self):
@@ -220,8 +212,9 @@ class SegmentationMetric(Metric):
 class MIoUMetric(nn.Module):
 	__name__ = 'miou'
 
-	def __init__(self, num_classes, ignore_index=None, normalized=False):
+	def __init__(self, num_classes, ignore_index=None, normalized=False, eps=1e-7, ):
 		super().__init__()
+		self.eps = eps
 		self.num_classes = num_classes
 		self.normalized = normalized
 		if ignore_index is None:
@@ -258,22 +251,38 @@ class MIoUMetric(nn.Module):
 			_, y_pr = y_pr.max(1)
 		if y_gt.dim() == 4:
 			_, y_gt = y_gt.max(1)
+
+		# pdb.set_trace()
 		conf_matrix = confusion_matrix(y_pr.view(-1), y_gt.view(-1), self.num_classes, self.normalized)
 		if self.ignore_index is not None:
 			for index in self.ignore_index:
-				conf_matrix[:, self.ignore_index] = 0
-				conf_matrix[self.ignore_index, :] = 0
+				conf_matrix[:, index] = 0
+				conf_matrix[index, :] = 0
 		true_positive = np.diag(conf_matrix)
 		false_positive = np.sum(conf_matrix, 0) - true_positive
 		false_negative = np.sum(conf_matrix, 1) - true_positive
+		batch_gt = np.sum(conf_matrix, 1)
+		class_exist = np.nonzero(batch_gt)
+		# print(class_exist)
+
 		# true_negative = np.sum(conf_matrix) - true_positive - false_negative - false_positive
 
 		# Just in case we get a division by 0, ignore/hide the error
-		with np.errstate(divide='ignore', invalid='ignore'):
-			iou = true_positive / (true_positive + false_positive + false_negative)
+		# with np.errstate(divide='ignore', invalid='ignore'):
+		iou_score = (true_positive + self.eps) / (true_positive + false_positive + false_negative + self.eps)
+		iou_score = iou_score[class_exist]
+		# pdb.set_trace()
+		# with warnings.catch_warnings() as w:
+		# Cause all warnings to always be triggered.
+		# warnings.simplefilter("error", category=RuntimeError)
+		warnings.filterwarnings('error')
+		try:
+			iou_score = torch.tensor(np.nanmean(iou_score))
+		except RuntimeWarning:
+			pdb.set_trace()
 		# pa = (true_positive + true_negative) / np.sum(conf_matrix)
-
-		return torch.from_numpy(np.nanmean(iou))
+		# 	pdb.set_trace()
+		return iou_score
 
 
 class MPAMetric(nn.Module):
@@ -317,19 +326,28 @@ class MPAMetric(nn.Module):
 			_, y_pr = y_pr.max(1)
 		if y_gt.dim() == 4:
 			_, y_gt = y_gt.max(1)
+
 		conf_matrix = confusion_matrix(y_pr.view(-1), y_gt.view(-1), self.num_classes, self.normalized)
 
 		if self.ignore_index is not None:
 			for index in self.ignore_index:
-				conf_matrix[:, self.ignore_index] = 0
-				conf_matrix[self.ignore_index, :] = 0
+				conf_matrix[:, index] = 0
+				conf_matrix[index, :] = 0
 		true_positive = np.diag(conf_matrix)
 		false_positive = np.sum(conf_matrix, 0) - true_positive
 		false_negative = np.sum(conf_matrix, 1) - true_positive
 		true_negative = np.sum(conf_matrix) - true_positive - false_negative - false_positive
+		batch_gt = np.sum(conf_matrix, 1)
+		class_exist = np.nonzero(batch_gt)
 
 		# Just in case we get a division by 0, ignore/hide the error
-		with np.errstate(divide='ignore', invalid='ignore'):
-			pa = (true_positive + true_negative) / np.sum(conf_matrix)
+		# with np.errstate(divide='ignore', invalid='ignore'):
 
-		return torch.from_numpy(np.nanmean(pa))
+		with warnings.catch_warnings() as w:
+			warnings.simplefilter("error", category=RuntimeError)
+			pa = (true_positive + true_negative) / np.sum(conf_matrix)
+			pa = pa[class_exist]
+			try:
+				return torch.tensor(np.nanmean(pa))
+			except:
+				pdb.set_trace()

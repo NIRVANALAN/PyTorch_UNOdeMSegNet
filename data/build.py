@@ -16,13 +16,12 @@ def build_train_loader(args):
 	train_dataset = MicroscopyDataset(args.data.root, args.data.train_list,
 									  args.data.train_img_size, output_size=args.data.test_img_size,
 									  transform=train_transform, single_channel_target=args.get(
-			'single_channel_target',
-			False), )
+			'single_channel_target', False), v_flip=args.data.v_flip, h_flip=args.data.h_flip)
 	train_batch_size = args.data.train_batch_size
 
 	train_loader = torch.utils.data.DataLoader(train_dataset,
 											   batch_size=train_batch_size, shuffle=True, num_workers=args.data.workers)
-	return train_loader
+	return train_loader, train_dataset
 
 
 def build_val_loader(args):
@@ -34,12 +33,29 @@ def build_val_loader(args):
 	])
 	val_dataset = MicroscopyDataset(args.data.root, args.data.test_list,
 									args.data.train_img_size, args.data.test_img_size, transform=val_transform,
-									single_channel_target=False, h_flip=False, v_flip=False)
+									h_flip=False, v_flip=False)
 	test_batch_size = args.data.test_batch_size
 	val_loader = torch.utils.data.DataLoader(val_dataset,
 											 batch_size=test_batch_size, shuffle=True,
 											 num_workers=args.data.workers)
-	return val_loader
+	return val_loader, val_dataset
+
+
+def build_inference_loader(args):
+	normalize = transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+	val_transform = transforms.Compose([
+		transforms.Grayscale(num_output_channels=3),
+		transforms.ToTensor(),
+		normalize,
+	])
+	val_dataset = MicroscopyDataset(args.data.root, args.data.test_list,
+									args.data.train_img_size, args.data.test_img_size, transform=val_transform,
+									h_flip=False, v_flip=False)
+	test_batch_size = args.data.test_batch_size
+	val_loader = torch.utils.data.DataLoader(val_dataset,
+											 batch_size=test_batch_size, shuffle=True,
+											 num_workers=args.data.workers)
+	return val_loader, val_dataset
 
 # use same transform for train/val for this example
 # trans = transforms.Compose([

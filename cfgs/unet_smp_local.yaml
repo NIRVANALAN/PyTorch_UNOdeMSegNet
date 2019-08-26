@@ -1,0 +1,33 @@
+data:
+  root: D:\repos\UTexas\dataset
+  train_list: D:\repos\UTexas\dataset\1024_dataset\1024\list\train_list.txt
+  test_list: D:\repos\UTexas\dataset\1024_dataset\1024\list\test_list.txt
+  train_img_size: 1024
+  test_img_size: 1024 # output size
+  train_batch_size: 1
+  test_batch_size: 1
+  workers: 4
+  rotate: 0
+  v_flip: True
+  h_flip: True
+model:
+  arch: resnet50
+  num_classes: 8 # with BG as a class
+  pretrained: ''
+  ignore: ['fc.weight', 'fc.bias']
+train:
+  total_iter: 10000
+  lr: 0.1
+  lr_iters: [23,33,43,53,63,73,83,93]
+  lr_gamma: 0.01
+  momentum: 0.99
+  weight_decay: 0.0001
+loss:
+#  pos_weight: [5.0, 5.0, 5.0, 5.0, 5.0]
+  kpt_weight: 0.0
+  cls_size_average: True
+  kpt_size_average: True
+  cls_loss: CE
+epochs: 100
+single_channel_target: True
+save_path: checkpoints/microscopy/unet_lr0.01_momentum0.99_smp_resnet50_softmax
