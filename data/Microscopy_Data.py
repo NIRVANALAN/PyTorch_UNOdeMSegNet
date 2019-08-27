@@ -173,39 +173,39 @@ class MicroscopyDataset(Dataset):
 
 
 class TiffDataset(Dataset):
-	def __init__(self, root, train_list, img_size, output_size, transform=None, target_transform=None, crop_size=-1,
-				 h_flip=False,
-				 v_flip=False, single_channel_target=False, include_bg=True):
+	def __init__(self, root, slide_name, patch_size, transform=None, target_transform=None):
 		self.transform = transform
 		self.root = root
-		self.h_flip = h_flip
-		self.v_flip = v_flip
-		self.img_size = img_size
-		self.output_size = output_size
-		# self.classes = category
+		self.patch_size = patch_size
 		self.transform = transform
-		self.crop_size = crop_size
 		self.target_transform = target_transform
-		self.images = read_object_labels(train_list)
-		self.single_channel_target = single_channel_target
+		self.img_array = (tiff.imread(os.path.join(root, slide_name)))
+		if self.img_array.dtype != 'uint16':
+			self.img_array = np.uint16(self.img_array)
+		self.slide_img = Image.fromarray(self.img_array)
+		if self.transform is not None:
+			self.slide_img = self.transform(self.slide_img)
+		channel, h, w = self.slide_img.shape  # torch.Size([3, 4096, 6144])
+		self.h = h // patch_size
+		self.w = w // patch_size
+		self.images = []
+		for x in range(self.h):
+			for y in range(self.w):
+				# print(x, y)
+				self.images.append(self.slide_img[:, x * patch_size:(x + 1) * patch_size, y * patch_size:(y + 1) *
+																									patch_size])
 
 	def __len__(self):
 		return len(self.images)
 
-	def get_number_classes(self):
-		return len(self.classes)
+	def get_img_array_shape(self):
+		return self.img_array.shape
 
 	def __getitem__(self, index):
-		path, segment_label_path, cell_type = self.images[index]
-		img = np.load(os.path.join(self.root, path))
-		# img = Image.open(os.path.join(self.root, path)).convert('RGB')  # gray scale
-		if img.shape[0] != self.img_size:
-			img = cv2.resize(img, (self.img_size, self.img_size), cv2.INTER_NEAREST)
-		img = Image.fromarray(img)
-
-		if self.transform is not None:
-			img = self.transform(img)
-		return [img]
+		x = index // self.w
+		y = index % self.w
+		img = self.images[index]
+		return [img, (x, y)]
 
 
 # def __getitem__(self, idx):
