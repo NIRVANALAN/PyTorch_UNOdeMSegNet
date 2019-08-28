@@ -1,3 +1,7 @@
+import os
+import sys
+if not os.getcwd() in sys.path:
+    sys.path.append(os.getcwd())
 from util.loss import PixelCELoss
 from util.metrics import MIoUMetric, MPAMetric
 from data import build_val_loader, build_train_loader
@@ -14,9 +18,9 @@ import segmentation_models_pytorch as smp
 import torch
 import os
 import sys
-
 if not os.getcwd() in sys.path:
     sys.path.append(os.getcwd())
+
 
 
 def main(args):
@@ -101,9 +105,6 @@ def main(args):
             print(
                 f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}')
 
-# if i == 25:
-# 	optimizer.param_groups[0]['lr'] = 1e-4
-# 	print('Decrease decoder learning rate to 1e-4!')
 
 
 if __name__ == '__main__':
