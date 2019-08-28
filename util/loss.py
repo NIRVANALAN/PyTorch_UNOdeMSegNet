@@ -18,9 +18,12 @@ def dice_loss(pred, target, smooth=1.):
 class PixelCELoss(nn.Module):
     __name__ = 'pixel_ce_loss'
 
-    def __init__(self, normalize_size=False, num_classes=8):
+    def __init__(self, normalize_size=False, num_classes=8, weight=None):
         super().__init__()
-        self.criterion = torch.nn.CrossEntropyLoss(reduction='none' if normalize_size else 'mean')
+        if weight is not None:
+            weight = torch.Tensor(weight)
+            print(f'weight: {weight}')
+        self.criterion = torch.nn.CrossEntropyLoss(reduction='none' if normalize_size else 'mean', weight=weight)
         self.normalize_size = normalize_size
         self.num_classes = num_classes
 

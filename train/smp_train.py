@@ -29,7 +29,7 @@ def main(args):
 		classes=num_classes
 	)
 	# loss = smp.utils.losses.BCEDiceLoss(eps=1., activation='softmax2d')
-	criterion = PixelCELoss(num_classes=num_classes)
+	criterion = PixelCELoss(num_classes=num_classes, weight=args.loss.class_weight)
 	metrics = [
 		# MIoUMetric(num_classes=num_classes, ignore_index=0),
 		MIoUMetric(num_classes=num_classes, ignore_index=None),
