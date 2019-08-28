@@ -6,11 +6,10 @@ data:
 #  /S1_Helios_1of3_v1270_all_list.txt
 #  slide_path: S1_Helios_1of3_v1270.tiff
 #  slide_path: NA_T4_122117_11.tif
-  slide_path: NA_T4R_122117_19.tif
+  slide_name: NA_T4R_122117_19.tif
   train_img_size: 64
   test_img_size: 64 # output size
-  train_batch_size: 32
-  test_batch_size: 32
+  test_batch_size: 128
   workers: 4
   rotate: 0
 single_channel_target: False

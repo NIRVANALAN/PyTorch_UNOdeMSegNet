@@ -19,9 +19,10 @@ import copy
 import yaml
 import argparse
 from easydict import EasyDict
-from data import build_val_loader
+from data import build_inference_loader
 from util.metrics import MIoUMetric, MPAMetric
 from util.loss import PixelCELoss
+from tqdm import tqdm
 
 
 def evaluated_checkpoint(args):
@@ -46,42 +47,23 @@ def evaluated_checkpoint(args):
 
 def main(args):
 	# evaluated_checkpoint(args)
-	patch_size = args.data.test_img_size
 	device = 'cuda'
 	model = torch.load(args.best_model)
-	normalize = transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
-	val_transform = transforms.Compose([
-		transforms.Grayscale(num_output_channels=3),
-		transforms.ToTensor(),
-		normalize,
-	])
-	slide_name = args.data.slide_path.split('/')[-1].split('.')[0]
-	img_array = (tiff.imread(os.path.join(args.data.root, args.data.slide_path)))
-	if img_array.dtype != 'uint16':
-		img_array = np.uint16(img_array)
-	pred_mask = np.zeros_like(img_array)
-	slide_img = Image.fromarray(img_array)
-	slide_img = val_transform(slide_img)
-	print(slide_img.shape)
-	channel, h, w = slide_img.shape  # torch.Size([3, 4096, 6144])
-	h = h // patch_size
-	w = w // patch_size
-	# pdb.set_trace()
-	for x in range(h):
-		for y in range(w):
-			print(x, y)
-			tile = slide_img[:, x * patch_size:(x + 1) * patch_size, y * patch_size:(y + 1) * patch_size].to(
-				device).unsqueeze(0)
-			pr_tile_mask = model.predict(tile).squeeze(0)
-			# pdb.set_trace()
-			pr_tile_mask = pr_tile_mask.argmax(0)
-			pred_mask[x * patch_size:(x + 1) * patch_size, y * patch_size:(y + 1) * patch_size] = pr_tile_mask.cpu(
-
-			).numpy()
+	patch_size = args.data.test_img_size
+	tiff_loader, tiff_dataset = build_inference_loader(args)
+	pred_mask = np.zeros(shape=(tiff_dataset.get_img_array_shape()))
+	for img, (h, w) in tqdm(tiff_loader):
+		# pdb.set_trace()
+		pr_tile_mask = model.predict(img.to(device))
+		pr_tile_mask = pr_tile_mask.argmax(1).cpu().numpy()  # BC*H*W
+		for i in range(len(h)):
+			x, y = h[i], w[i]
+			pred_mask[x * patch_size:(x + 1) * patch_size, y * patch_size:(y + 1) * patch_size] = pr_tile_mask[i]
+	slide_name = args.data.slide_name
 	if not os.path.isdir(args.save_path):
 		os.makedirs(args.save_path)
 	checkpoint_name = os.path.split(args.best_model)[-1]
-	np.save(os.path.join(args.save_path, f'{slide_name}_{checkpoint_name}_pred_mask'), pred_mask)
+	np.save(os.path.join(args.save_path, f'{slide_name}_{checkpoint_name}_pred_mask_debug'), pred_mask)
 	print('done')
 
 	pass

@@ -1,6 +1,6 @@
 import torch
 from torchvision import transforms
-from .Microscopy_Data import MicroscopyDataset
+from .Microscopy_Data import MicroscopyDataset, TiffDataset
 
 
 def build_train_loader(args):
@@ -48,14 +48,13 @@ def build_inference_loader(args):
 		transforms.ToTensor(),
 		normalize,
 	])
-	val_dataset = MicroscopyDataset(args.data.root, args.data.test_list,
-									args.data.train_img_size, args.data.test_img_size, transform=val_transform,
-									h_flip=False, v_flip=False)
+	inference_dataset = TiffDataset(args.data.root, args.data.slide_name, args.data.test_img_size,
+									transform=val_transform)
 	test_batch_size = args.data.test_batch_size
-	val_loader = torch.utils.data.DataLoader(val_dataset,
-											 batch_size=test_batch_size, shuffle=True,
+	inference_loader = torch.utils.data.DataLoader(inference_dataset,
+											 batch_size=test_batch_size, shuffle=False,
 											 num_workers=args.data.workers)
-	return val_loader, val_dataset
+	return inference_loader, inference_dataset
 
 # use same transform for train/val for this example
 # trans = transforms.Compose([

@@ -16,8 +16,9 @@ model:
   pretrained: ''
   ignore: ['fc.weight', 'fc.bias']
 train:
-  lr: 0.1
-  lr_iters: [23,33,43,53,63,73,83,93]
+  lr: 1
+#  lr_iters: [23,43,63,83,103,133,153,183]
+  lr_iters: [33,63,93,123,143,173,203,233]
   lr_gamma: 0.01
   momentum: 0.99
   weight_decay: 0.0001
@@ -29,4 +30,4 @@ loss:
   cls_loss: CE
 epochs: 200
 single_channel_target: False
-save_path: checkpoints/microscopy/64/ts0.5_ex0.2_bg0.1/
+save_path: checkpoints/microscopy/64/ts0.5_ex0.2_bg0.1_iter300_lr1/
