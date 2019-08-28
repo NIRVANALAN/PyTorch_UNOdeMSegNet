@@ -1,3 +1,5 @@
+import itertools
+from functools import reduce
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -7,14 +9,13 @@ def plot_img_array(img_array, ncol=3):
 
     print(f'nrow: {nrow}')
 
-    f, plots = plt.subplots(nrow, ncol, sharex='all', sharey='all', figsize=(ncol * 4, nrow * 4))
+    f, plots = plt.subplots(
+        nrow, ncol, sharex='all', sharey='all', figsize=(
+            ncol * 4, nrow * 4))
 
     for i in range(len(img_array)):
         plots[i // ncol, i % ncol]
         plots[i // ncol, i % ncol].imshow(img_array[i])
-
-
-from functools import reduce
 
 
 def plot_side_by_side(img_arrays):
@@ -23,9 +24,6 @@ def plot_side_by_side(img_arrays):
     #     print(len(flatten_list))
     #     print(f'array to plot: {(np.array(flatten_list)).shape}')
     plot_img_array(np.array(flatten_list), ncol=len(img_arrays))
-
-
-import itertools
 
 
 def plot_errors(results_dict, title):
@@ -44,10 +42,14 @@ def plot_errors(results_dict, title):
 
 def masks_to_colorimg(masks):
     print(f'mask.shape:{masks.shape}')
-    colors = np.asarray(
-        [(201, 58, 64), (242, 207, 1), (0, 152, 75), (101, 172, 228), (56, 34, 132), (160, 194, 56), (100, 100, 100)])
+    colors = np.asarray([(201, 58, 64), (242, 207, 1), (0, 152, 75),
+                         (101, 172, 228), (56, 34, 132), (160, 194, 56), (100, 100, 100)])
 
-    colorimg = np.ones((masks.shape[1], masks.shape[2], 3), dtype=np.float32) * 255
+    colorimg = np.ones(
+        (masks.shape[1],
+         masks.shape[2],
+         3),
+        dtype=np.float32) * 255
     channels, height, width = masks.shape
 
     for y in range(height):

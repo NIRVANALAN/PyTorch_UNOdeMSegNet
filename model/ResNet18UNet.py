@@ -20,7 +20,8 @@ MODELS = {
 
 class ResNet18UNet(nn.Module):
 
-    def __init__(self, n_class, base_model='resnet18', pretrained=True, list_children=False, summary=False):
+    def __init__(self, n_class, base_model='resnet18',
+                 pretrained=True, list_children=False, summary=False):
         super().__init__()
         if base_model in MODELS:
             self.base_model = MODELS[base_model](pretrained=pretrained)

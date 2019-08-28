@@ -1,22 +1,22 @@
+from util.loss import PixelCELoss
+from util.metrics import MIoUMetric, MPAMetric
+from data import build_val_loader, build_train_loader
+from easydict import EasyDict
+import argparse
+import yaml
+import copy
+import time
+import numpy as np
+import torch.nn as nn
+from torch.optim import lr_scheduler
+import torch.optim as optim
 import segmentation_models_pytorch as smp
 import torch
 import os
 import sys
 
 if not os.getcwd() in sys.path:
-	sys.path.append(os.getcwd())
-import torch.optim as optim
-from torch.optim import lr_scheduler
-import torch.nn as nn
-import numpy as np
-import time
-import copy
-import yaml
-import argparse
-from easydict import EasyDict
-from data import build_val_loader, build_train_loader
-from util.metrics import MIoUMetric, MPAMetric
-from util.loss import PixelCELoss
+    sys.path.append(os.getcwd())
 
 
 def main(args):
@@ -93,23 +93,22 @@ def main(args):
 			torch.save(model, os.path.join(args.save_path, f'./{max_score}.pth'))
 			print(f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}')
 
-
 # if i == 25:
 # 	optimizer.param_groups[0]['lr'] = 1e-4
 # 	print('Decrease decoder learning rate to 1e-4!')
 
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="Softmax classification loss")
+    parser = argparse.ArgumentParser(description="Softmax classification loss")
 
-	parser.add_argument('--seed', type=int, default=12345)
-	parser.add_argument('--config', type=str)
-	parser.add_argument('--local_rank', type=int, default=0)
-	args = parser.parse_args()
+    parser.add_argument('--seed', type=int, default=12345)
+    parser.add_argument('--config', type=str)
+    parser.add_argument('--local_rank', type=int, default=0)
+    args = parser.parse_args()
 
-	with open(args.config) as f:
-		config = yaml.load(f)
-	params = EasyDict(config)
-	params.seed = args.seed
-	params.local_rank = args.local_rank
-	main(params)
+    with open(args.config) as f:
+        config = yaml.load(f)
+    params = EasyDict(config)
+    params.seed = args.seed
+    params.local_rank = args.local_rank
+    main(params)

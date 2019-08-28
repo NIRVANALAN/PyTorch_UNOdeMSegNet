@@ -1,3 +1,17 @@
+from tqdm import tqdm
+from util.loss import PixelCELoss
+from util.metrics import MIoUMetric, MPAMetric
+from data import build_inference_loader
+from easydict import EasyDict
+import argparse
+import yaml
+import copy
+import time
+import tifffile as tiff
+import numpy as np
+import torch.nn as nn
+from torch.optim import lr_scheduler
+import torch.optim as optim
 import segmentation_models_pytorch as smp
 from torchvision import transforms
 import pdb
@@ -104,9 +118,8 @@ if __name__ == '__main__':
 	parser.add_argument('--config', type=str)
 	parser.add_argument('--local_rank', type=int, default=0)
 	args = parser.parse_args()
-
 	with open(args.config) as f:
-		config = yaml.load(f)
+       		config = yaml.load(f)
 	params = EasyDict(config)
 	params.seed = args.seed
 	params.local_rank = args.local_rank
