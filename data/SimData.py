@@ -50,9 +50,16 @@ image_datasets = {
 batch_size = 25
 
 dataloaders = {
-    'train': DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=0),
-    'val': DataLoader(val_set, batch_size=batch_size, shuffle=True, num_workers=0)
-}
+    'train': DataLoader(
+        train_set,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=0),
+    'val': DataLoader(
+        val_set,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=0)}
 
 dataset_sizes = {
     x: len(image_datasets[x]) for x in image_datasets.keys()

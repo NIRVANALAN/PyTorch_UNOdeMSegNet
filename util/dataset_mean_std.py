@@ -7,8 +7,15 @@ import torchvision.transforms as transforms
 dataset_names = ('cifar10', 'cifar100', 'mnist')
 
 parser = argparse.ArgumentParser(description='PyTorchLab')
-parser.add_argument('-d', '--dataset', metavar='DATA', default='cifar10', choices=dataset_names,
-                    help='dataset to be used: ' + ' | '.join(dataset_names) + ' (default: cifar10)')
+parser.add_argument(
+    '-d',
+    '--dataset',
+    metavar='DATA',
+    default='cifar10',
+    choices=dataset_names,
+    help='dataset to be used: ' +
+    ' | '.join(dataset_names) +
+    ' (default: cifar10)')
 
 args = parser.parse_args()
 
@@ -40,8 +47,13 @@ print(args.dataset)
 #     print(train_set.train_data.float().mean() / 255)
 #     print(train_set.train_data.float().std() / 255)
 if args.dataset == "micro":
-    train_transform = transforms.Compose([transforms.Grayscale(num_output_channels=1), transforms.ToTensor()])
-    train_set = torchvision.datasets.MNIST(root=data_dir, train=True, download=True, transform=train_transform)
+    train_transform = transforms.Compose(
+        [transforms.Grayscale(num_output_channels=1), transforms.ToTensor()])
+    train_set = torchvision.datasets.MNIST(
+        root=data_dir,
+        train=True,
+        download=True,
+        transform=train_transform)
     # print(vars(train_set))
     print(list(train_set.train_data.size()))
     print(train_set.train_data.float().mean() / 255)

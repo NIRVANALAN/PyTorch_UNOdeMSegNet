@@ -189,39 +189,41 @@ class MicroscopyDataset(Dataset):
 
 
 class TiffDataset(Dataset):
-	def __init__(self, root, slide_name, patch_size, transform=None, target_transform=None):
-		self.transform = transform
-		self.root = root
-		self.patch_size = patch_size
-		self.transform = transform
-		self.target_transform = target_transform
-		self.img_array = (tiff.imread(os.path.join(root, slide_name)))
-		if self.img_array.dtype != 'uint16':
-			self.img_array = np.uint16(self.img_array)
-		self.slide_img = Image.fromarray(self.img_array)
-		if self.transform is not None:
-			self.slide_img = self.transform(self.slide_img)
-		channel, h, w = self.slide_img.shape  # torch.Size([3, 4096, 6144])
-		self.h = h // patch_size
-		self.w = w // patch_size
-		self.images = []
-		for x in range(self.h):
-			for y in range(self.w):
-				# print(x, y)
-				self.images.append(self.slide_img[:, x * patch_size:(x + 1) * patch_size, y * patch_size:(y + 1) *
-																									patch_size])
+    def __init__(self, root, slide_name, patch_size,
+                 transform=None, target_transform=None):
+        self.transform = transform
+        self.root = root
+        self.patch_size = patch_size
+        self.transform = transform
+        self.target_transform = target_transform
+        self.img_array = (tiff.imread(os.path.join(root, slide_name)))
+        if self.img_array.dtype != 'uint16':
+            self.img_array = np.uint16(self.img_array)
+        self.slide_img = Image.fromarray(self.img_array)
+        if self.transform is not None:
+            self.slide_img = self.transform(self.slide_img)
+        channel, h, w = self.slide_img.shape  # torch.Size([3, 4096, 6144])
+        self.h = h // patch_size
+        self.w = w // patch_size
+        self.images = []
+        for x in range(self.h):
+            for y in range(self.w):
+                # print(x, y)
+                self.images.append(self.slide_img[:,
+                                                  x * patch_size:(x + 1) * patch_size,
+                                                  y * patch_size:(y + 1) * patch_size])
 
-	def __len__(self):
-		return len(self.images)
+    def __len__(self):
+        return len(self.images)
 
-	def get_img_array_shape(self):
-		return self.img_array.shape
+    def get_img_array_shape(self):
+        return self.img_array.shape
 
-	def __getitem__(self, index):
-		x = index // self.w
-		y = index % self.w
-		img = self.images[index]
-		return [img, (x, y)]
+    def __getitem__(self, index):
+        x = index // self.w
+        y = index % self.w
+        img = self.images[index]
+        return [img, (x, y)]
 
 
 # def __getitem__(self, idx):

@@ -10,7 +10,8 @@ def dice_loss(pred, target, smooth=1.):
 
     intersection = (pred * target).sum(dim=2).sum(dim=2)
 
-    loss = (1 - ((2. * intersection + smooth) / (pred.sum(dim=2).sum(dim=2) + target.sum(dim=2).sum(dim=2) + smooth)))
+    loss = (1 - ((2. * intersection + smooth) /
+                 (pred.sum(dim=2).sum(dim=2) + target.sum(dim=2).sum(dim=2) + smooth)))
 
     return loss.mean()
 
@@ -20,7 +21,8 @@ class PixelCELoss(nn.Module):
 
     def __init__(self, normalize_size=False, num_classes=8):
         super().__init__()
-        self.criterion = torch.nn.CrossEntropyLoss(reduction='none' if normalize_size else 'mean')
+        self.criterion = torch.nn.CrossEntropyLoss(
+            reduction='none' if normalize_size else 'mean')
         self.normalize_size = normalize_size
         self.num_classes = num_classes
 
