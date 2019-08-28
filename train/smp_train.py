@@ -33,9 +33,25 @@ def main(args):
         classes=num_classes
     )
     # loss = smp.utils.losses.BCEDiceLoss(eps=1., activation='softmax2d')
+
+    # load class weight
+    class_weight = None
+    if isinstance(args.loss.class_weight, list):
+        print('Loading class weights from static class list')
+        class_weight = np.array(args.loss.class_weight)
+    elif isinstance(args.loss.class_weight, str):
+        print(f'Loading class weights from file {args.loss.class_weight}')
+        try:
+            class_weight = np.load(args.loss.class_weight)
+            class_weight = np.divide(1.0, class_weight, where=class_weight!=0)
+            class_weight /= np.sum(class_weight)
+        except OSError as e:
+            print(f'Error cannot open class weight file, {e}, exiting')
+            exit(-1)
+
     criterion = PixelCELoss(
         num_classes=num_classes,
-        weight=args.loss.class_weight)
+        weight=class_weight)
     metrics = [
         # MIoUMetric(num_classes=num_classes, ignore_index=0),
         MIoUMetric(num_classes=num_classes, ignore_index=None),
