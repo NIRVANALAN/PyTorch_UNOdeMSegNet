@@ -24,7 +24,8 @@ class PixelCELoss(nn.Module):
         if weight is not None:
             weight = torch.Tensor(weight)
             print(f'weight: {weight}')
-        self.criterion = torch.nn.CrossEntropyLoss(reduction='none' if normalize_size else 'mean', weight=weight)
+        self.criterion = torch.nn.CrossEntropyLoss(
+            reduction='none' if normalize_size else 'mean', weight=weight)
         self.normalize_size = normalize_size
         self.num_classes = num_classes
 
