@@ -2,25 +2,20 @@ import os
 import sys
 if not os.getcwd() in sys.path:
     sys.path.append(os.getcwd())
-from util.loss import PixelCELoss
-from util.metrics import MIoUMetric, MPAMetric
-from data import build_val_loader, build_train_loader
-from easydict import EasyDict
-import argparse
-import yaml
-import copy
-import time
-import numpy as np
-import torch.nn as nn
-from torch.optim import lr_scheduler
-import torch.optim as optim
-import segmentation_models_pytorch as smp
 import torch
-import os
-import sys
-if not os.getcwd() in sys.path:
-    sys.path.append(os.getcwd())
-
+import segmentation_models_pytorch as smp
+import torch.optim as optim
+from torch.optim import lr_scheduler
+import torch.nn as nn
+import numpy as np
+import time
+import copy
+import yaml
+import argparse
+from easydict import EasyDict
+from data import build_val_loader, build_train_loader
+from util.metrics import MIoUMetric, MPAMetric
+from util.loss import PixelCELoss
 
 
 def main(args):
@@ -44,7 +39,8 @@ def main(args):
             print(f'Loading class weights from file {args.loss.class_weight}')
             try:
                 class_weight = np.load(args.loss.class_weight)
-                class_weight = np.divide(1.0, class_weight, where=class_weight!=0)
+                class_weight = np.divide(
+                    1.0, class_weight, where=class_weight != 0)
                 class_weight /= np.sum(class_weight)
             except OSError as e:
                 print(f'Error cannot open class weight file, {e}, exiting')
@@ -121,7 +117,6 @@ def main(args):
                     f'./{max_score}.pth'))
             print(
                 f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}')
-
 
 
 if __name__ == '__main__':

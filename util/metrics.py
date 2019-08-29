@@ -272,8 +272,8 @@ class MIoUMetric(nn.Module):
 
         # Just in case we get a division by 0, ignore/hide the error
         # with np.errstate(divide='ignore', invalid='ignore'):
-        iou_score = (true_positive + self.eps) / (true_positive + \
-                     false_positive + false_negative + self.eps)
+        iou_score = (true_positive + self.eps) / (true_positive +
+                                                  false_positive + false_negative + self.eps)
         iou_score = iou_score[class_exist]
         # pdb.set_trace()
         # with warnings.catch_warnings() as w:
