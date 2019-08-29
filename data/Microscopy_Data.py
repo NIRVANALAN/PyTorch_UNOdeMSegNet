@@ -176,12 +176,12 @@ class MicroscopyDataset(Dataset):
         if self.is_flip:
             if np.random.random() < 0.5:
                 # mirror
-                img = np.flip(img, 0)
-                mask = np.flip(mask, 0)
+                img = np.flip(img, 0).copy()
+                mask = np.flip(mask, 0).copy()
             for _ in range(np.random.randint(4)):
                 # rotate 90 degree
-                img = np.rot90(img)
-                mask = np.rot90(mask)
+                img = np.rot90(img).copy()
+                mask = np.rot90(mask).copy()
 
         # apply custom transform
         if self.transform is not None:

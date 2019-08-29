@@ -1,7 +1,7 @@
 data:
   root: /work/06633/ylan/maverick2/data/dataset/dataset
-  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/64/ts0.5_ex0.2_bg0.1/train_list.txt
-  test_list: /work/06633/ylan/maverick2/data/dataset/dataset/64/ts0.5_ex0.2_bg0.1/test_list.txt
+  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/64/ts0.3_ex0.2_bg0.3/train_list.txt
+  test_list: /work/06633/ylan/maverick2/data/dataset/dataset/64/ts0.3_ex0.2_bg0.3/test_list.txt
   train_img_size: 64
   test_img_size: 64 # output size
   train_batch_size: 64
@@ -23,11 +23,11 @@ train:
   momentum: 0.99
   weight_decay: 0.0001
 loss:
-  class_weight: [0.5, 5.0, 5.0, 1.0, 1.0, 5.0, 1.0, 1.0]
+  class_weight: [0.1, 10.0, 1.0, 1.0, 1.0, 10.0, 1.0, 1.0]
 #  class_weight: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
   cls_size_average: True
   kpt_size_average: True
   cls_loss: CE
 epochs: 200
 single_channel_target: False
-save_path: checkpoints/microscopy/64/ts0.5_ex0.2_bg0.1_iter200_lr0.1_cw
+save_path: checkpoints/microscopy/64/ts0.3_ex0.2_bg0.3_iter200_lr0.1_cw_membrane
