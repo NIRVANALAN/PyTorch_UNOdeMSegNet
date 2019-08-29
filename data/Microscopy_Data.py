@@ -128,7 +128,9 @@ class MicroscopyDataset(Dataset):
             h_flip=False,
             v_flip=False,
             single_channel_target=False,
-            include_bg=True):
+            include_bg=True,
+            normalize_color=False,
+            shuffle_list=True):
         self.transform = transform
         self.root = root
         self.is_flip = h_flip or v_flip  # TODO: fix args
@@ -137,8 +139,9 @@ class MicroscopyDataset(Dataset):
         self.transform = transform
         self.crop_size = crop_size
         self.target_transform = target_transform
-        self.images = read_object_labels(train_list)
+        self.images = read_object_labels(train_list, shuffle=shuffle_list)
         self.single_channel_target = single_channel_target
+        self.normalize_color = normalize_color
 
     def __len__(self):
         return len(self.images)
@@ -181,10 +184,15 @@ class MicroscopyDataset(Dataset):
                 mask = np.rot90(mask)
 
         # apply custom transform
-        img = Image.fromarray(img)
         if self.transform is not None:
+            img = Image.fromarray(img)
             img = self.transform(img)
-
+        else:
+            img = torch.Tensor(img.astype(float))
+            img = (img - img.mean()) / img.std()
+        if len(img.shape) == 2:
+            # add channel dim
+            img = img.unsqueeze(0)
         return img, mask
 
 

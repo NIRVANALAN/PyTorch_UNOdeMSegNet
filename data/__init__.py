@@ -2,3 +2,4 @@
 # from .Microscopy_Data import MicroscopyDataset
 from .build import *
 from .Microscopy_Data import MicroscopyDataset
+from .DataAugment import *
