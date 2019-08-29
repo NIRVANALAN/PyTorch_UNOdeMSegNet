@@ -1,6 +1,7 @@
 import torch
 from torchvision import transforms
 from .Microscopy_Data import MicroscopyDataset, TiffDataset
+from .DataAugment import WaveletDataAugmemt
 
 
 def build_train_loader(args):
@@ -24,6 +25,7 @@ def build_train_loader(args):
             False),
         v_flip=args.data.v_flip,
         h_flip=args.data.h_flip)
+    train_dataset = DataAugment(train_dataset, 'db1', 3)
     train_batch_size = args.data.train_batch_size
 
     train_loader = torch.utils.data.DataLoader(
@@ -48,6 +50,7 @@ def build_val_loader(args):
         transform=val_transform,
         h_flip=False,
         v_flip=False)
+    val_dataset = DataAugment(val_dataset, 'db1', 3)
     test_batch_size = args.data.test_batch_size
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
