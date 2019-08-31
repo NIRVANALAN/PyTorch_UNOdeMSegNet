@@ -25,7 +25,8 @@ def build_train_loader(args):
             False),
         v_flip=args.data.v_flip,
         h_flip=args.data.h_flip)
-    train_dataset = DataAugment(train_dataset, 'db1', 3)
+    if args.data.wavelet:
+        train_dataset = WaveletDataAugmemt(train_dataset, 'db1', 3)
     train_batch_size = args.data.train_batch_size
 
     train_loader = torch.utils.data.DataLoader(
@@ -50,7 +51,8 @@ def build_val_loader(args):
         transform=val_transform,
         h_flip=False,
         v_flip=False)
-    val_dataset = DataAugment(val_dataset, 'db1', 3)
+    if args.data.wavelet:
+        val_dataset = WaveletDataAugmemt(val_dataset, 'db1', 3)
     test_batch_size = args.data.test_batch_size
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
@@ -72,12 +74,15 @@ def build_inference_loader(args):
         args.data.test_img_size,
         transform=val_transform)
     test_batch_size = args.data.test_batch_size
+    shape = inference_dataset.get_img_array_shape()
+    if args.data.wavelet:
+        inference_dataset = WaveletDataAugmemt(inference_dataset, 'db1', 3)
     inference_loader = torch.utils.data.DataLoader(
         inference_dataset,
         batch_size=test_batch_size,
         shuffle=False,
         num_workers=args.data.workers)
-    return inference_loader, inference_dataset
+    return inference_loader, inference_dataset, shape
 
 # use same transform for train/val for this example
 # trans = transforms.Compose([

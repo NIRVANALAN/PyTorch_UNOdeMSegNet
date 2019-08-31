@@ -38,4 +38,4 @@ class WaveletDataAugmemt(Dataset):
         coeff_list = torch.Tensor(coeff_list)
 
         # append to channels
-        return torch.cat((img, coeff_list), axis=0), label
+        return torch.cat((img, coeff_list), dim=0), label
