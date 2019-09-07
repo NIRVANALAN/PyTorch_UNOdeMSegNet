@@ -1,7 +1,7 @@
 data:
   root: /work/06633/ylan/maverick2/data/dataset/dataset
-  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/128/ts0.3_ex0.2_bg0.3/train_list.txt
-  test_list: /work/06633/ylan/maverick2/data/dataset/dataset/128/ts0.3_ex0.2_bg0.3/test_list.txt
+  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/128/ts0.3_ex0.1_bg0.3/train_list.txt
+  test_list: /work/06633/ylan/maverick2/data/dataset/dataset/128/ts0.3_ex0.1_bg0.3/test_list.txt
   train_img_size: 128
   test_img_size: 128 # output size
   train_batch_size: 32
@@ -10,6 +10,7 @@ data:
   rotate: 0
   h_flip: True
   v_flip: True
+  wavelet: False
 model:
   arch: se_resnet50
   num_classes: 8 # with BG as a class
@@ -24,9 +25,11 @@ train:
 loss:
 #  class_weight: [0.1, 10.0, 1.0, 1.0, 1.0, 10.0, 1.0, 1.0]
   class_weight: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+#  class_weight: /work/06633/ylan/maverick2/data/dataset/dataset/128/ts0.3_ex0.1_bg0.3/dataset_class_stat.npy
   cls_size_average: True
   kpt_size_average: True
   cls_loss: CE
 epochs: 200
 single_channel_target: False
-save_path: checkpoints/microscopy/128/ts0.3_ex0.2_bg0.3_nocw
+save_path: checkpoints/microscopy/128/ts0.3_ex0.1_bg0.3_nocw
+#save_path: checkpoints/microscopy/128/ts0.3_ex0.1_bg0.3_distribution_weight

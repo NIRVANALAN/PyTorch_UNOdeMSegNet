@@ -16,8 +16,8 @@ from collections import OrderedDict
 import argparse
 from easydict import EasyDict
 from data import build_val_loader, build_train_loader
-from segmentation_pytorch.utils.losses import PixelCELoss
 from segmentation_pytorch.utils.metrics import MIoUMetric, MPAMetric
+from segmentation_pytorch.utils.losses import ReconstructionLoss, NCutLoss
 from model import WaveletModel
 
 
@@ -31,36 +31,13 @@ def main(args):
 			activation='softmax',  # whatever, will do .max during metrics calculation
 			classes=num_classes)
 	else:
-		model = smp.Unet(
-			encoder_name=args.model.arch,
+		model = smp.Wnet(
+			encoder_name_1=args.model.arch,
 			# encoder_weights='imagenet',
-			encoder_weights=None,
 			activation='softmax',  # whatever, will do .max during metrics calculation
 			classes=num_classes)
 		pass
 
-	# loss = smp.utils.losses.BCEDiceLoss(eps=1., activation='softmax2d')
-
-	# load class weight
-	class_weight = None
-	if hasattr(args.loss, 'class_weight'):
-		if isinstance(args.loss.class_weight, list):
-			print('Loading class weights from static class list')
-			class_weight = np.array(args.loss.class_weight)
-		elif isinstance(args.loss.class_weight, str):
-			print(f'Loading class weights from file {args.loss.class_weight}')
-			try:
-				class_weight = np.load(args.loss.class_weight)
-				class_weight = np.divide(
-					1.0, class_weight, where=class_weight != 0)
-				class_weight /= np.sum(class_weight)
-			except OSError as e:
-				print(f'Error cannot open class weight file, {e}, exiting')
-				exit(-1)
-
-	criterion = PixelCELoss(
-		num_classes=num_classes,
-		weight=class_weight)
 	metrics = [
 		# MIoUMetric(num_classes=num_classes, ignore_index=0),
 		MIoUMetric(num_classes=num_classes, ignore_index=None),
@@ -79,6 +56,7 @@ def main(args):
 	])
 	# optimizer = torch.optim.SGD(model.parameters(), lr=args.train.lr, momentum=args.train.momentum)
 	# dataset
+	criterion =
 	args.pixel_ce = True
 	train_loader, _ = build_train_loader(args)
 	valid_loader, _ = build_val_loader(args)

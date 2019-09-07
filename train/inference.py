@@ -1,63 +1,29 @@
 from tqdm import tqdm
 import os
 import sys
-
 if not os.getcwd() in sys.path:
     sys.path.append(os.getcwd())
-from util.loss import PixelCELoss
-from util.metrics import MIoUMetric, MPAMetric
+from segmentation_pytorch.utils.losses import PixelCELoss
+from segmentation_pytorch.utils.metrics import MIoUMetric, MPAMetric
 from data import build_inference_loader
 import webcolors
 from easydict import EasyDict
 import argparse
 import yaml
-import copy
-import time
-import tifffile as tiff
 import numpy as np
-import torch.nn as nn
-from torch.optim import lr_scheduler
-import torch.optim as optim
-import matplotlib.pyplot as plt
 from PIL import Image
-import pdb
-from torchvision import transforms
 import segmentation_models_pytorch as smp
 from model import WaveletModel
 import torch
 
+
 device = 'cuda'
 
 
-# def evaluated_checkpoint(args):
-#     eval_loader, eval_dataset = build_inference_loader(args)
-#     model = torch.load(args.best_model)
-#     num_classes = args.model.get('num_classes', 8)
-#     criterion = PixelCELoss(num_classes=num_classes)
-#     metrics = [
-#         MIoUMetric(num_classes=num_classes, ignore_index=None),
-#         MPAMetric(num_classes=num_classes, ignore_index=None)
-#     ]
-#     valid_epoch = smp.utils.train.ValidEpoch(
-#         model,
-#         loss=criterion,
-#         metrics=metrics,
-#         device=device,
-#         verbose=True,
-#     )
-#     valid_epoch.run(eval_loader)
-
-
-#
-def inference_all_tiff(args):
+def evaluated_checkpoint(args):
+    eval_loader, eval_dataset = build_inference_loader(args)
     model = torch.load(args.best_model)
-    patch_size = args.data.test_img_size
-    slides_dir = os.path.join(args.data.root, 'raw')
-    slides = os.listdir(slides_dir)
-    checkpoint_name = args.best_model.split('/')[-2]
-    save_path = os.path.join(args.save_root, str(patch_size), checkpoint_name)
-    # evaluate slide
-    num_classes = args.data.num_classes
+    num_classes = args.model.get('num_classes', 8)
     criterion = PixelCELoss(num_classes=num_classes)
     metrics = [
         MIoUMetric(num_classes=num_classes, ignore_index=None),
@@ -70,6 +36,16 @@ def inference_all_tiff(args):
         device=device,
         verbose=True,
     )
+    valid_epoch.run(eval_loader)
+
+
+#
+def inference_all_tiff(args):
+    model = torch.load(args.best_model)
+    patch_size = args.data.test_img_size
+    slides = os.listdir(args.data.root)
+    checkpoint_name = args.best_model.split('/')[-2]
+    save_path = os.path.join(args.save_root, str(patch_size), checkpoint_name)
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
     for slide in slides:
@@ -77,7 +53,6 @@ def inference_all_tiff(args):
         args.data.slide_name = slide
         tiff_loader, tiff_dataset, shape = build_inference_loader(args)
         pred_mask = np.zeros(shape=shape)
-        # inference and visualization
         for img, (h, w) in tqdm(tiff_loader):
             pr_tile_mask = model.predict(img.to(device))
             pr_tile_mask = pr_tile_mask.argmax(1).cpu().numpy()  # BC*H*W
@@ -86,21 +61,12 @@ def inference_all_tiff(args):
                 pred_mask[x *
                           patch_size:(x +
                                       1) *
-                                     patch_size, y *
-                                                 patch_size:(y +
-                                                             1) *
-                                                            patch_size] = pr_tile_mask[i]
+                          patch_size, y *
+                          patch_size:(y +
+                                      1) *
+                          patch_size] = pr_tile_mask[i]
         slide_name = args.data.slide_name
         visualize_mask(pred_mask, os.path.join(save_path, slide_name))
-        # metrics
-        tiff_dataset.eval = True
-        inference_loader = torch.utils.data.DataLoader(
-            tiff_dataset,
-            batch_size=args.data.test_batch_size,
-            shuffle=False,
-            num_workers=args.data.workers)
-        valid_logs = valid_epoch.run(inference_loader)
-        print(f'{slide_name}, miou:{valid_logs["miou"]}, mpa:{valid_logs["mpa"]}')
     pass
 
 

@@ -198,13 +198,15 @@ class MicroscopyDataset(Dataset):
 
 class TiffDataset(Dataset):
     def __init__(self, root, slide_name, patch_size,
-                 transform=None, target_transform=None):
+                 transform=None, target_transform=None, evaluate=False):
         self.transform = transform
+        self.eval = evaluate
         self.root = root
         self.patch_size = patch_size
         self.transform = transform
         self.target_transform = target_transform
-        self.img_array = (tiff.imread(os.path.join(root, slide_name)))
+        self.img_array = (tiff.imread(os.path.join(root, 'raw', slide_name)))
+        self.label_array = (np.load(os.path.join(root, 'label', slide_name.split('.')[0] + '.npy')))
         if self.img_array.dtype != 'uint16':
             self.img_array = np.uint16(self.img_array)
         self.slide_img = Image.fromarray(self.img_array)
@@ -214,12 +216,16 @@ class TiffDataset(Dataset):
         self.h = h // patch_size
         self.w = w // patch_size
         self.images = []
+        self.labels = []
         for x in range(self.h):
             for y in range(self.w):
                 # print(x, y)
                 self.images.append(self.slide_img[:,
-                                                  x * patch_size:(x + 1) * patch_size,
-                                                  y * patch_size:(y + 1) * patch_size])
+                                   x * patch_size:(x + 1) * patch_size,
+                                   y * patch_size:(y + 1) * patch_size])
+                self.labels.append(self.label_array[
+                                   x * patch_size:(x + 1) * patch_size,
+                                   y * patch_size:(y + 1) * patch_size])
 
     def __len__(self):
         return len(self.images)
@@ -231,7 +237,11 @@ class TiffDataset(Dataset):
         x = index // self.w
         y = index % self.w
         img = self.images[index]
-        return [img, (x, y)]
+        label = self.labels[index]
+        if self.eval:
+            return [img, label]
+        else:
+            return [img, (x, y)]
 
 
 # def __getitem__(self, idx):

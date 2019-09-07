@@ -13,7 +13,6 @@ from train.train import train_model
 from data import build_val_loader, build_train_loader
 import os
 import sys
-from util.loss import PixelCELoss
 
 if not os.getcwd() in sys.path:
 	sys.path.append(os.getcwd())

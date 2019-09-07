@@ -1,16 +1,16 @@
 data:
   root: /work/06633/ylan/maverick2/data/dataset/dataset
-  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/256/ts0.1_ex0.1_bg0.3/train_list.txt
-  test_list: /work/06633/ylan/maverick2/data/dataset/dataset/256/ts0.1_ex0.1_bg0.3/test_list.txt
-  train_img_size: 256
-  test_img_size: 256 # output size
+  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/512/ts0.05_ex0.01_bg0.3/train_list.txt
+  test_list: /work/06633/ylan/maverick2/data/dataset/dataset/512/ts0.05_ex0.01_bg0.3/test_list.txt
+  train_img_size: 512
+  test_img_size: 512 # output size
   train_batch_size: 8
   test_batch_size: 16
   workers: 4
   rotate: 0
   h_flip: True
   v_flip: True
-  wavelet: True
+  wavelet: False
 model:
   arch: se_resnet50
   num_classes: 8 # with BG as a class
@@ -30,4 +30,4 @@ loss:
   cls_loss: CE
 epochs: 200
 single_channel_target: False
-save_path: checkpoints/microscopy/256/ts0.1_ex0.1_bg0.3_wavelet
+save_path: checkpoints/microscopy/512/ts0.05_ex0.01_bg0.3
