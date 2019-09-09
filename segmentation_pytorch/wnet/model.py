@@ -75,6 +75,6 @@ class Wnet(Model):
 
 	def forward(self, x):
 		"""Sequentially pass `x` trough model`s `encoder` and `decoder` (return logits!)"""
-		x_mid = self.u(x)
-		x_rcnst = self.decoder(x_mid)
+		x_mid = self.u_enc(x)
+		x_rcnst = self.u_dec(x_mid)
 		return {'class': x_mid, 'recovery': x_rcnst}

@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 from . import functions as F
+import numpy as np
+import torch.nn.functional as F
 
 
 class JaccardLoss(nn.Module):
@@ -57,6 +59,10 @@ class PixelCELoss(nn.Module):
 	__name__ = 'pixel_ce_loss'
 
 	def __init__(self, normalize_size=False, num_classes=8, weight=None):
+		"""
+
+		:type weight: list
+		"""
 		super().__init__()
 		if weight is not None:
 			weight = torch.Tensor(weight)
@@ -105,6 +111,16 @@ class ReconstructionLoss(nn.Module):
 		return torch.sum((pred - target) ** 2)
 
 
+vertical_sobel = torch.nn.Parameter(torch.from_numpy(np.array([[[[1, 0, -1],
+																 [1, 0, -1],
+																 [1, 0, -1]]]])).float().cuda(), requires_grad=False)
+
+horizontal_sobel = torch.nn.Parameter(torch.from_numpy(np.array([[[[1, 1, 1],
+																   [0, 0, 0],
+																   [-1, -1, -1]]]])).float().cuda(),
+									  requires_grad=False)
+
+
 class NCutLoss(nn.Module):
 	__name__ = 'normalized_cut_loss'
 
@@ -113,13 +129,23 @@ class NCutLoss(nn.Module):
 	def __init__(self):
 		super().__init__()
 
+	def gradient_regularization(softmax, device='cuda'):
+		vert = torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[0])], 1)
+		horizontal = torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[0])], 1)
+		print('vert', torch.sum(vert))
+		print('horizontal', torch.sum(horizontal))
+		mag = torch.pow(torch.pow(vert, 2) + torch.pow(horizontal, 2), 0.5)
+		mean = torch.mean(mag)
+		return mean
+
 	def forward(self, w, pred):
 		# normalized cut loss, W is the association matrix, P is the K-class assignment
-		ncut = torch.zeros(1)
-		for k in range(pred.size(1)):
-			PW = torch.matmul(pred[:, k], w)
-			ncut += torch.matmul(PW, pred[:, k]) / PW.sum()
-		return ncut / pred.size(1)
+		# ncut = torch.zeros(1)
+		# for k in range(pred.size(1)):
+		# 	PW = torch.matmul(pred[:, k], w)
+		# 	ncut += torch.matmul(PW, pred[:, k]) / PW.sum()
+		# return ncut / pred.size(1)
+		return self.gradient_regularization(pred)
 
 
 class WNetLoss(nn.Module):

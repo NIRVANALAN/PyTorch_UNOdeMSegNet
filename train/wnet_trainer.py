@@ -17,7 +17,7 @@ import argparse
 from easydict import EasyDict
 from data import build_val_loader, build_train_loader
 from segmentation_pytorch.utils.metrics import MIoUMetric, MPAMetric
-from segmentation_pytorch.utils.losses import ReconstructionLoss, NCutLoss
+from segmentation_pytorch.utils.losses import WNetLoss
 from model import WaveletModel
 
 
@@ -56,8 +56,7 @@ def main(args):
 	])
 	# optimizer = torch.optim.SGD(model.parameters(), lr=args.train.lr, momentum=args.train.momentum)
 	# dataset
-	criterion =
-	args.pixel_ce = True
+	criterion = WNetLoss
 	train_loader, _ = build_train_loader(args)
 	valid_loader, _ = build_val_loader(args)
 
