@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J microscopy_unet
-#SBATCH -o out/unet_512_seres50-%j.out         # output and error file name (%j expands to jobID)
+#SBATCH -o out/unet_seres50-%j.out         # output and error file name (%j expands to jobID)
 #SBATCH -N 1              # total number of nodes
 #SBATCH -n 1
 #SBATCH -p gtx           # queue (partition) -- normal, development, etc.

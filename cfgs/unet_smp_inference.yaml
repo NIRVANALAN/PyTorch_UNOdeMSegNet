@@ -7,8 +7,9 @@ data:
 #  slide_path: NA_T4_122117_11.tif
 #  slide_name: NA_T4R_122117_19.tif
 #  test_img_size: 64 # output size
-  test_img_size: 128 # output size
-  test_batch_size: 64
+  test_img_size: 256 # output size
+  overlap_size: 480
+  test_batch_size: 40
   workers: 4
   rotate: 0
   wavelet: False
@@ -17,7 +18,8 @@ save_root: inference/
 #save_path: inference/T4/122117_11
 #best_model: checkpoints/microscopy/64_se50_bc32_0.5/0.2900565167268117.pth
 #best_model: checkpoints/microscopy/128/ts0.5_ex0.2_bg0.1/0.5162187433905072.pth
-best_model: checkpoints/microscopy/128/ts0.3_ex0.1_bg0.3_nocw/0.2926910697881665.pth
+#best_model: checkpoints/microscopy/512/ratio0.5/0.2811503775160889.pth
+best_model: checkpoints/microscopy/256/ratio0.5/0.22244014971110282.pth
 #best_model: checkpoints/microscopy/128/ts0.3_ex0.1_bg0.3_nocw_wavelet/0.3142457024327346.pth
 #best_model: checkpoints/microscopy/512/ts0.05_ex0.01_bg0.3/0.3684685038668769.pth
 #best_model: checkpoints/microscopy/256/ts0.1_ex0.1_bg0.3/0.39853732802651143.pth

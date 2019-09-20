@@ -46,7 +46,7 @@ def build_val_loader(args):
     val_dataset = MicroscopyDataset(
         args.data.root,
         args.data.test_list,
-        args.data.train_img_size,
+        args.data.test_img_size,
         args.data.test_img_size,
         transform=val_transform,
         h_flip=False,
@@ -72,7 +72,7 @@ def build_inference_loader(args):
         args.data.root,
         args.data.slide_name,
         args.data.test_img_size,
-        transform=val_transform)
+        transform=val_transform, overlap_size=args.data.overlap_size)
     test_batch_size = args.data.test_batch_size
     shape = inference_dataset.get_img_array_shape()
     if args.data.wavelet:

@@ -1,11 +1,11 @@
 data:
   root: /work/06633/ylan/maverick2/data/dataset/dataset
-  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/512/ratio0.5/train_list.txt
+  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/768/ratio0.5/train_list.txt
   test_list: /work/06633/ylan/maverick2/data/dataset/dataset/512/ratio1/test_list.txt
-  train_img_size: 512
+  train_img_size: 768
   test_img_size: 512 # output size
-  train_batch_size: 8
-  test_batch_size: 16
+  train_batch_size: 4
+  test_batch_size: 8
   workers: 4
   rotate: 0
   h_flip: True
@@ -18,7 +18,7 @@ model:
   ignore: ['fc.weight', 'fc.bias']
 train:
   lr: 0.1
-  lr_iters: [23,43,63,83,103,133,153,183]
+  lr_iters: [13,23,33,43,53,63,73,83,93]
   lr_gamma: 0.01
   momentum: 0.99
   weight_decay: 0.0001
@@ -26,10 +26,13 @@ loss:
 #  class_weight: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
   # ['bg', 'PlasmaMembrane', 'NuclearMembrane', 'MitochondriaDark', 'MitochondriaLight', 'Desmosome',
   #            'Cytoskeleton', 'LipidDroplet']
-  class_weight: [1.0, 10.0, 10.0, 1.0, 1.0, 10.0, 1.0, 10.0]
+#  class_weight: '/work/06633/ylan/maverick2/data/dataset/dataset/512/ratio0.5distribution.npy'
+  class_weight: '/work/06633/ylan/maverick2/data/dataset/dataset/768/ratio0.5distribution.npy'
+#  class_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   cls_size_average: True
   kpt_size_average: True
   cls_loss: CE
-epochs: 200
+epochs: 100
 single_channel_target: False
-save_path: checkpoints/microscopy/512/ratio0.5_weight
+save_path: checkpoints/microscopy/768/ratio0.5_100iter_weight_distribution
+#save_path: checkpoints/microscopy/768/ratio0.5_100iter_weight_1

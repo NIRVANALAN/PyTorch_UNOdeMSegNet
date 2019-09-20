@@ -198,7 +198,7 @@ class MicroscopyDataset(Dataset):
 
 class TiffDataset(Dataset):
     def __init__(self, root, slide_name, patch_size,
-                 transform=None, target_transform=None, evaluate=False):
+                 transform=None, target_transform=None, evaluate=False, overlap_size=480):
         self.transform = transform
         self.eval = evaluate
         self.root = root

@@ -1,10 +1,10 @@
 data:
   root: /work/06633/ylan/maverick2/data/dataset/dataset
-  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/128/ts0.3_ex0.1_bg0.3/train_list.txt
-  test_list: /work/06633/ylan/maverick2/data/dataset/dataset/128/ts0.3_ex0.1_bg0.3/test_list.txt
+  train_list: /work/06633/ylan/maverick2/data/dataset/dataset/128/ratio1/train_list.txt
+  test_list: /work/06633/ylan/maverick2/data/dataset/dataset/128/ratio1/test_list.txt
   train_img_size: 128
   test_img_size: 128 # output size
-  train_batch_size: 32
+  train_batch_size: 40
   test_batch_size: 64
   workers: 4
   rotate: 0
@@ -31,5 +31,5 @@ loss:
   cls_loss: CE
 epochs: 200
 single_channel_target: False
-save_path: checkpoints/microscopy/128/ts0.3_ex0.1_bg0.3_nocw
+save_path: checkpoints/microscopy/128/ratio1
 #save_path: checkpoints/microscopy/128/ts0.3_ex0.1_bg0.3_distribution_weight
