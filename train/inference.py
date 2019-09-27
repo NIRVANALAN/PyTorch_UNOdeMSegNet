@@ -134,11 +134,13 @@ def visualize_mask(pred_mask, save_path, slide_shape=None, patch_size=512):
 		# print(category[i])
 		color_mask[pred_mask == i] = webcolors.name_to_rgb(color[i])
 	h, w = slide_shape
+	print(f'slide_shape: h:{h} w:{w}')
 	h = h // patch_size
 	w = w // patch_size
+	print(f'patch: h:{h} w:{w}')
 
-	for x in range(h):
-		for y in range(w):
+	for y in range(h):
+		for x in range(w):
 			color_mask = cv2.putText(color_mask, f'{x}_{y}', (x * patch_size + 10, y * patch_size + 60),
 									 cv2.FONT_HERSHEY_COMPLEX, 2.0, (255, 255, 255), 3)
 			color_mask = cv2.rectangle(color_mask, (x * patch_size, y * patch_size), ((x + 1) * patch_size,
