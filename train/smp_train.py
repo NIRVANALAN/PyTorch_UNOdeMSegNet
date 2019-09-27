@@ -15,7 +15,7 @@ import yaml
 from collections import OrderedDict
 import argparse
 from easydict import EasyDict
-from data import build_val_loader, build_train_loader
+from data import build_val_loader, build_train_loader, build_inference_loader
 from segmentation_pytorch.utils.losses import PixelCELoss
 from segmentation_pytorch.utils.metrics import MIoUMetric, MPAMetric
 from model import WaveletModel
@@ -107,19 +107,31 @@ def main(args):
 	exp_lr_scheduler = lr_scheduler.MultiStepLR(
 		optimizer, milestones=args.train.lr_iters, gamma=0.1)
 
-	num_epochs = args.get('epochs', 100)
-
+	num_epochs = args.get('epochs', 200)
+	test_slides = args.get('test_slides', ['S1_Helios_1of3_v1270', 'NA_T4_122117_01', 'NA_T4R_122117_19', ])
+	test_loader = {}
+	for test_slide in test_slides:
+		# print(f'inference {test_slide}')
+		args.data.slide_name = test_slide
+		args.eval = True
+		tiff_loader, tiff_dataset, shape = build_inference_loader(args)
+		test_loader[test_slide] = tiff_loader
 	for i in range(0, num_epochs):
 
 		print('\nEpoch: {}  lr: {}'.format(i, optimizer.param_groups[0]['lr']))
 		train_logs = train_epoch.run(train_loader)
-		valid_logs = valid_epoch.run(valid_loader)
+		test_valid_log = {'miou': np.array([]), 'mpa': np.array([])}
+		for test_slide in test_slides:
+			valid_logs = valid_epoch.run(test_loader[test_slides])
+			print(f'{test_slides}, miou:{valid_logs["miou"]}, mpa:{valid_logs["mpa"]}')
+			test_valid_log['miou'] = np.append(test_valid_log['miou'], valid_logs['miou'])
+			test_valid_log['mpa'] = np.append(test_valid_log['mpa'], valid_logs['mpa'])
 
 		exp_lr_scheduler.step()
 
 		# do something (save model, change lr, etc.)
-		if max_score < valid_logs['miou']:
-			max_score = valid_logs['miou']  # mean
+		if max_score < test_valid_log['miou'].mean():
+			max_score = test_valid_log['miou'].mean()  # mean
 			if not os.path.isdir(args.save_path):
 				os.makedirs(args.save_path)
 			torch.save(
@@ -128,7 +140,7 @@ def main(args):
 					args.save_path,
 					f'./{max_score}.pth'))
 			print(
-				f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}')
+				f'Model saved: MIOU:{test_valid_log["miou"]}, MPA:{test_valid_log["mpa"]}')
 
 
 if __name__ == '__main__':

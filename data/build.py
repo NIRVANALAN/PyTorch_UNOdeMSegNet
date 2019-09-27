@@ -72,7 +72,7 @@ def build_inference_loader(args):
         args.data.root,
         args.data.slide_name,
         args.data.test_img_size,
-        transform=val_transform, overlap_size=args.data.overlap_size)
+        transform=val_transform, overlap_size=args.data.overlap_size, evaluate=args.get('eval', False))
     test_batch_size = args.data.test_batch_size
     shape = inference_dataset.get_img_array_shape()
     if args.data.wavelet:

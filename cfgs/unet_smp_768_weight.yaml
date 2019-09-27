@@ -18,7 +18,8 @@ model:
   ignore: ['fc.weight', 'fc.bias']
 train:
   lr: 0.1
-  lr_iters: [13,23,33,43,53,63,73,83,93]
+#  lr_iters: [13,23,33,43,53,63,73,83,93]
+  lr_iters: [23,43,63,83,103,133,153,183]
   lr_gamma: 0.01
   momentum: 0.99
   weight_decay: 0.0001
@@ -27,12 +28,12 @@ loss:
   # ['bg', 'PlasmaMembrane', 'NuclearMembrane', 'MitochondriaDark', 'MitochondriaLight', 'Desmosome',
   #            'Cytoskeleton', 'LipidDroplet']
 #  class_weight: '/work/06633/ylan/maverick2/data/dataset/dataset/512/ratio0.5distribution.npy'
-  class_weight: '/work/06633/ylan/maverick2/data/dataset/dataset/768/ratio0.5distribution.npy'
-#  class_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+#  class_weight: '/work/06633/ylan/maverick2/data/dataset/dataset/768/ratio0.5distribution.npy'
+  class_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   cls_size_average: True
   kpt_size_average: True
   cls_loss: CE
-epochs: 100
+epochs: 200
 single_channel_target: False
-save_path: checkpoints/microscopy/768/ratio0.5_100iter_weight_distribution
-#save_path: checkpoints/microscopy/768/ratio0.5_100iter_weight_1
+#save_path: checkpoints/microscopy/768/ratio0.5_200iter_weight_distribution
+save_path: checkpoints/microscopy/768/ratio0.5_200iter_weight_1

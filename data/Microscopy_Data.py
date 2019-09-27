@@ -226,6 +226,7 @@ class TiffDataset(Dataset):
                 self.labels.append(self.label_array[
                                    x * patch_size:(x + 1) * patch_size,
                                    y * patch_size:(y + 1) * patch_size])
+        print(f'build slide_dataset: {slide_name} done. images: {len(self.images)}')
 
     def __len__(self):
         return len(self.images)
