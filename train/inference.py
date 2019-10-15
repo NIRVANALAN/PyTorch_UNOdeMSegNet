@@ -5,6 +5,9 @@ import sys
 
 if not os.getcwd() in sys.path:
 	sys.path.append(os.getcwd())
+import segmentation_pytorch as smp
+from model import WaveletModel
+from segmentation_pytorch.utils.functions import confusion_matrix
 from segmentation_pytorch.utils.losses import PixelCELoss
 from segmentation_pytorch.utils.metrics import MIoUMetric, MPAMetric
 from data import build_inference_loader
@@ -23,12 +26,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import pdb
 from torchvision import transforms
-import segmentation_models_pytorch as smp
-from model import WaveletModel
 import torch
 
 device = 'cuda'
-
 
 # def evaluated_checkpoint(args):
 #     eval_loader, eval_dataset = build_inference_loader(args)
@@ -48,6 +48,26 @@ device = 'cuda'
 #     )
 #     valid_epoch.run(eval_loader)
 
+category = [
+	'bg',
+	'PlasmaMembrane',
+	'NuclearMembrane',
+	'MitochondriaDark',
+	'MitochondriaLight',
+	'Desmosome',
+	'Cytoskeleton',
+	'LipidDroplet']
+
+color = [
+	'gray',
+	'orange',
+	'blue',
+	'green',
+	'azure',
+	'red',
+	'yellow',
+	'pink']
+
 
 #
 def inference_all_tiff(args):
@@ -61,9 +81,10 @@ def inference_all_tiff(args):
 	# evaluate slide
 	num_classes = args.data.num_classes
 	criterion = PixelCELoss(num_classes=num_classes)
+	MIOU = MIoUMetric(num_classes=num_classes, ignore_index=None)
+	MPA = MPAMetric(num_classes=num_classes, ignore_index=None)
 	metrics = [
-		MIoUMetric(num_classes=num_classes, ignore_index=None),
-		MPAMetric(num_classes=num_classes, ignore_index=None)
+		MIOU, MPA
 	]
 	valid_epoch = smp.utils.train.ValidEpoch(
 		model,
@@ -79,22 +100,76 @@ def inference_all_tiff(args):
 		args.data.slide_name = slide
 		tiff_loader, tiff_dataset, shape = build_inference_loader(args)
 		pred_mask = np.zeros(shape=shape)
-		pred_mask_no = pred_mask.copy()
+		h, w = shape
+		print(f'slide_shape: h:{h} w:{w}')
+		h = h // patch_size
+		w = w // patch_size
+		print(f'patch: h:{h} w:{w}')
+		final_label_mask = np.ndarray(shape=(*pred_mask.shape, 3), dtype=np.uint8)
+		final_diff_mask = final_label_mask.copy()
+		color_mask = np.ndarray(shape=(patch_size, patch_size, 3), dtype=np.uint8)
+		conf_metric = np.ndarray((num_classes, num_classes), dtype=np.int64)
 		# inference and visualization
-		for img, (h, w) in tqdm(tiff_loader):
+		for img, (h, w), label in tqdm(tiff_loader):
+			label = label.to(device)
 			pr_tile_mask = model.predict(img.to(device))
+			miou = MIOU(pr_tile_mask, label)
+			mpa = MPA(pr_tile_mask, label)
 			pr_tile_mask = pr_tile_mask.argmax(1).cpu().numpy()  # BC*H*W
+			conf_matrix = confusion_matrix(pr_tile_mask.reshape(-1), label.view(-1), num_classes, False)
+			label = label.cpu().detach().numpy()
+			conf_metric += conf_matrix
 			for i in range(len(h)):
+				# print(i)
 				x, y = h[i], w[i]
-				pred_mask[x *
-						  patch_size:(x +
-									  1) *
-									 patch_size, y *
-												 patch_size:(y +
-															 1) *
-															patch_size] = pr_tile_mask[i]
+				for j in range(len(category)):
+					# print(category[i])
+					color_mask[pr_tile_mask[i] == j] = webcolors.name_to_rgb(color[j])
+
+				color_mask = cv2.putText(color_mask, f'{x}_{y}', (10, 60),
+										 cv2.FONT_HERSHEY_COMPLEX, 1.0, (0, 0, 0), 1)
+				color_mask = cv2.rectangle(color_mask, (0, 0), (patch_size,
+																patch_size),
+										   (255, 0, 0), 2)
+				diff_mask = color_mask.copy()
+				diff_pixel = pr_tile_mask[i] - label[i]
+				diff_mask[diff_pixel != 0] = webcolors.name_to_rgb('black')
+				color_mask = cv2.putText(color_mask, f'miou:{miou}', (10, 120),
+										 cv2.FONT_HERSHEY_COMPLEX, 1.0, (0, 0, 0), 1)
+				color_mask = cv2.putText(color_mask, f'mpa:{mpa:.5f}', (10, 160),
+										 cv2.FONT_HERSHEY_COMPLEX, 1.0, (0, 0, 0), 1)
+				final_label_mask[x *
+								 patch_size:(x +
+											 1) *
+											patch_size, y *
+														patch_size:(y +
+																	1) *
+																   patch_size, :] = color_mask
+				final_diff_mask[x *
+								 patch_size:(x +
+											 1) *
+											patch_size, y *
+														patch_size:(y +
+																	1) *
+																   patch_size, :] = diff_mask
+		np.set_printoptions(1)
+		print(f'conf_metric: \n{conf_metric}')
 		slide_name = args.data.slide_name
-		visualize_mask(pred_mask, os.path.join(save_path, slide_name), tiff_dataset.get_img_array_shape(), patch_size)
+		colorful_pred_save_path = os.path.join(save_path, slide_name)
+		np.savetxt(f'{colorful_pred_save_path}.txt', conf_metric)
+
+		# for i in range(len(category)):
+		# 	# print(category[i])
+		# 	color_mask[pred_mask == i] = webcolors.name_to_rgb(color[i])
+
+		colorful_pred_mask = Image.fromarray(final_label_mask)
+		colorful_pred_mask.save(f'{colorful_pred_save_path}.png', format='png')
+		print(f'image saved: {colorful_pred_save_path}')
+		final_diff_mask = Image.fromarray(final_diff_mask)
+		final_diff_mask.save(f'{colorful_pred_save_path}_diff.png', format='png')
+		print(f'diff map saved: {colorful_pred_save_path}_diff')
+		# visualize_mask(pred_mask, os.path.join(save_path, slide_name), tiff_dataset.get_img_array_shape(), patch_size)
+
 		# metrics
 		tiff_dataset.eval = True
 		inference_loader = torch.utils.data.DataLoader(
@@ -108,26 +183,6 @@ def inference_all_tiff(args):
 
 
 def visualize_mask(pred_mask, save_path, slide_shape=None, patch_size=512):
-	category = [
-		'bg',
-		'PlasmaMembrane',
-		'NuclearMembrane',
-		'MitochondriaDark',
-		'MitochondriaLight',
-		'Desmosome',
-		'Cytoskeleton',
-		'LipidDroplet']
-
-	color = [
-		'gray',
-		'orange',
-		'blue',
-		'green',
-		'azure',
-		'red',
-		'yellow',
-		'pink']
-
 	color_mask = np.ndarray(shape=(*pred_mask.shape, 3), dtype=np.uint8)
 	# tmp_array = np.array(color_mask)
 	for i in range(len(category)):

@@ -242,7 +242,7 @@ class TiffDataset(Dataset):
         if self.eval:
             return [img, label]
         else:
-            return [img, (x, y)]
+            return [img, (x, y), label]
 
 
 # def __getitem__(self, idx):

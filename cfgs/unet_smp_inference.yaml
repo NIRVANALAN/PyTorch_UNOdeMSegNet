@@ -9,7 +9,7 @@ data:
 #  test_img_size: 64 # output size
   test_img_size: 512 # output size
   overlap_size: 480
-  test_batch_size: 40
+  test_batch_size: 30
   workers: 4
   rotate: 0
   wavelet: False

@@ -179,9 +179,10 @@ def confusion_matrix(predicted, target, num_classes, normalized=False):
 	# hack for bincounting 2 arrays together
 	x = predicted + num_classes * target
 	bincount_2d = np.bincount(
-		x.astype(np.int32), minlength=num_classes ** 2)
+		x.astype(np.int64), minlength=num_classes ** 2)
 	assert bincount_2d.size == num_classes ** 2
 	conf = bincount_2d.reshape((num_classes, num_classes))
+	# print(conf)
 	if normalized:
 		conf = conf.astype(np.float32)
 		return conf / conf.sum(1).clip(min=1e-12)[:, None]
