@@ -131,7 +131,8 @@ class NCutLoss(nn.Module):
 
 	def gradient_regularization(softmax, device='cuda'):
 		vert = torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[0])], 1)
-		horizontal = torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[0])], 1)
+		horizontal = torch.cat(
+			[F.conv2d(softmax[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[0])], 1)
 		print('vert', torch.sum(vert))
 		print('horizontal', torch.sum(horizontal))
 		mag = torch.pow(torch.pow(vert, 2) + torch.pow(horizontal, 2), 0.5)
@@ -162,3 +163,29 @@ class WNetLoss(nn.Module):
 		ncut_loss = self.ncut_loss(pred['class'])
 		rcnt_loss = self.rcnt_loss(pred['recovery'], target)
 		return ncut_loss + rcnt_loss
+
+
+class PixelNLLLoss(nn.Module):
+	__name__ = 'pixel_nll_loss'
+
+	def __init__(self, normalize_size=False, num_classes=8, weight=None):
+		"""
+
+		:type weight: list
+		"""
+		super().__init__()
+		if weight is not None:
+			pass
+		self.criterion = torch.nn.KLDivLoss(reduction='mean')
+		self.num_classes = num_classes
+
+	def forward(self, pred, label):
+		# Calculation
+		ps_pred = pred
+		ps_label = label
+		N, C, H, W = ps_pred.size()
+		assert ps_label.size() == (N, C, H, W)  # BS * 8 * H * W
+		ps_pred = F.log_softmax(ps_pred, 1)
+		loss = self.criterion(ps_pred, ps_label)
+
+		return loss
