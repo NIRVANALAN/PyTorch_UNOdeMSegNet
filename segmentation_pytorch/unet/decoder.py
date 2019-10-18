@@ -103,9 +103,9 @@ class UnetDecoder(Model):
 		x = self.layer4([x, skips[3]])
 		x = self.layer5([x, None])
 		x = self.final_conv(x)
-		if F_x:
-			F_x = F.interpolate(F_x, scale_factor=8)
-			x += F_x
+		# if F_x:
+		# 	F_x = F.interpolate(F_x, scale_factor=8)
+		# 	x += F_x
 		return x
 
 
