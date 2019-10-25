@@ -55,6 +55,24 @@ class BCEDiceLoss(DiceLoss):
 		return dice + bce
 
 
+class ExtremeLoss(nn.Module):
+	__name__ = 'extreme_loss'
+
+	def __init__(self):
+		super().__init__()
+
+	# def forward(self, *input):
+
+	def forward(self, logpx, px_true):
+		with torch.enable_grad():
+			sum_class = 0.0
+			for lpx, pxt in zip(logpx, px_true):
+				px = torch.exp(lpx)
+				true_idx = pxt > 0.5
+				sum_class += -(torch.mean(lpx[true_idx]) - torch.mean(px[~true_idx]))
+		return sum_class
+
+
 class PixelCELoss(nn.Module):
 	__name__ = 'pixel_ce_loss'
 
@@ -189,3 +207,5 @@ class PixelNLLLoss(nn.Module):
 		loss = self.criterion(ps_pred, ps_label)
 
 		return loss
+
+
