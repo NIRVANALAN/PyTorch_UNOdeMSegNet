@@ -201,6 +201,10 @@ class MIoUMetric(nn.Module):
 		integer values between 0 and K-1.
 		:return: Mean IoU
 		"""
+		if type(y_pr) is list:
+			y_pr = y_pr[0]
+		if type(y_gt) is list:
+			y_gt = y_gt[0]
 		# Dimensions check
 		assert y_pr.size(0) == y_gt.size(0), \
 			'number of targets and predicted outputs do not match'
@@ -276,6 +280,10 @@ class MPAMetric(nn.Module):
 		integer values between 0 and K-1.
 		:return: Mean IoU
 		"""
+		if type(y_pr) is list:
+			y_pr = y_pr[0]
+		if type(y_gt) is list:
+			y_gt = y_gt[0]
 		# Dimensions check
 		assert y_pr.size(0) == y_gt.size(0), \
 			'number of targets and predicted outputs do not match'

@@ -1,5 +1,6 @@
 import os
 import sys
+from torchvision.models.segmentation import deeplabv3_resnet50
 
 if not os.getcwd() in sys.path:
 	sys.path.append(os.getcwd())
@@ -23,6 +24,10 @@ from model import WaveletModel
 
 def main(args):
 	num_classes = args.model.get('num_classes', 8)
+	multi_stage = args.get('multi_stage', False)
+	if multi_stage:
+		assert multi_stage >= 2
+	print(f'multi_stage_UNET: {multi_stage}')
 	if args.data.get('wavelet', False):
 		model = WaveletModel(
 			encoder_name=args.model.arch,
@@ -31,12 +36,13 @@ def main(args):
 			activation='softmax',  # whatever, will do .max during metrics calculation
 			classes=num_classes)
 	else:
+		# model = deeplabv3_resnet50(num_classes=num_classes, pretrained=True)
 		model = smp.Unet(
 			encoder_name=args.model.arch,
 			# encoder_weights='imagenet',
 			encoder_weights=None,
 			activation='softmax',  # whatever, will do .max during metrics calculation
-			classes=num_classes)
+			classes=num_classes, multi_stage=multi_stage)
 		pass
 
 	# loss = smp.utils.losses.BCEDiceLoss(eps=1., activation='softmax2d')
@@ -60,7 +66,7 @@ def main(args):
 
 	criterion = PixelCELoss(
 		num_classes=num_classes,
-		weight=class_weight)
+		weight=class_weight, multi_stage=multi_stage)
 	metrics = [
 		# MIoUMetric(num_classes=num_classes, ignore_index=0),
 		MIoUMetric(num_classes=num_classes, ignore_index=None),

@@ -10,6 +10,7 @@ import traceback
 from typing import Any, Union, Iterable
 
 import cv2
+from skimage.measure import block_reduce
 import numpy as np
 from PIL import Image
 import torch
@@ -24,6 +25,19 @@ object_categories = ['T4', 'T4R', 'S1']
 
 category = ['PlasmaMembrane', 'NuclearMembrane', 'MitochondriaDark', 'MitochondriaLight', 'Desmosome', 'Cytoskeleton',
 			'LipidDroplet']
+
+
+def get_block_label(patch):
+	"""
+
+	:type patch:np.ndarray
+	"""
+	from collections import Counter
+	import operator
+	pixel_class = dict(Counter(patch.flatten()))
+	sorted_pixel = sorted(pixel_class.items(), key=operator.itemgetter(1), reverse=True)
+	label, _ = sorted_pixel[0]
+	return label
 
 
 def load_pil(img, shape=None):
@@ -130,7 +144,9 @@ class MicroscopyDataset(Dataset):
 			include_bg=True,
 			normalize_color=False,
 			shuffle_list=True,
-			coarse_dsr=None):
+			coarse_dsr=None,
+			multi_stage=False):
+		self.multi_stage = multi_stage
 		self.transform = transform
 		self.root = root
 		self.is_flip = h_flip or v_flip  # TODO: fix args
@@ -178,7 +194,7 @@ class MicroscopyDataset(Dataset):
 					for k in range(len(category)):
 						coarse_mask[k, i, j] = np.sum(mask[i:i * self.coarse_dsr, j:j * self.coarse_dsr] == k)
 
-			coarse_mask /= self.coarse_dsr**2
+			coarse_mask /= self.coarse_dsr ** 2
 			mask = coarse_mask
 		# 	mask, (self.img_size, self.img_size), cv2.INTER_NEAREST)
 
@@ -203,6 +219,13 @@ class MicroscopyDataset(Dataset):
 		if len(img.shape) == 2:
 			# add channel dim
 			img = img.unsqueeze(0)
+		# load multi-stage label
+		if self.multi_stage:
+			masks = [mask]
+			for dsr in range(2, self.multi_stage + 1):
+				dsr = pow(2, dsr)
+				masks.append(block_reduce(mask, (dsr, dsr), get_block_label))
+			return img, masks
 		return img, mask
 
 

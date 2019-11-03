@@ -3,6 +3,7 @@ import tifffile as tiff
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from skimage.measure import block_reduce
 
 
 class SlideFetcher:
@@ -120,6 +121,8 @@ def show_triplet(ximg_sel, ylabel_sel, yprob_sel, C=1, DSR=1):
 
 ximg_dsr, ylabel_dsr, yprob_dsr = extract_window(1600, 3200, 1600, 3200, 8, 16)
 print(ximg_dsr.shape, ylabel_dsr.shape, yprob_dsr.shape)
+
+
 # show_triplet(ximg_dsr, ylabel_dsr, yprob_dsr)
 
 

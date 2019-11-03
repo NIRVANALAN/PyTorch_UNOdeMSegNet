@@ -48,10 +48,12 @@ class UnetDecoder(Model):
 			final_channels=1,
 			use_batchnorm=True,
 			center=False,
-			attention_type=None
+			attention_type=None,
+			multi_stage=False
 	):
 		super().__init__()
 
+		self.multi_stage = multi_stage
 		if center:
 			channels = encoder_channels[0]
 			self.center = CenterBlock(channels, channels, use_batchnorm=use_batchnorm)
@@ -97,34 +99,15 @@ class UnetDecoder(Model):
 		if self.center:
 			encoder_head = self.center(encoder_head)
 
-		x = self.layer1([encoder_head, skips[0]])
-		x = self.layer2([x, skips[1]])
-		x = self.layer3([x, skips[2]])
-		x = self.layer4([x, skips[3]])
-		x = self.layer5([x, None])
-		x = self.final_conv(x)
-		# if F_x:
-		# 	F_x = F.interpolate(F_x, scale_factor=8)
-		# 	x += F_x
-		return x
+		x1 = self.layer1([encoder_head, skips[0]])
+		x2 = self.layer2([x1, skips[1]])
+		x3 = self.layer3([x2, skips[2]])
+		x4 = self.layer4([x3, skips[3]])
+		x5 = self.layer5([x4, None])
+		xf = self.final_conv(x5)
+		return_list = xf, x5, x4, x3, x2, x1
+		if self.multi_stage:
+			return return_list[:self.multi_stage]
+		else:
+			return xf
 
-
-# class UnetMultiScaleDecoder(UnetDecoder):
-# 	def __init__(self):
-# 		super(UnetMultiScaleDecoder, self).__init__()
-#
-# 	def forward(self, x, F_x=None):
-# 		encoder_head = x[0]
-# 		skips = x[1:]
-#
-# 		if self.center:
-# 			encoder_head = self.center(encoder_head)
-#
-# 		x = self.layer1([encoder_head, skips[0]])
-# 		x = self.layer2([x, skips[1]])
-# 		x = self.layer3([x, skips[2]])
-# 		x = self.layer4([x, skips[3]])
-# 		x = self.layer5([x, None])
-# 		x = self.final_conv(x)
-#
-# 		return x

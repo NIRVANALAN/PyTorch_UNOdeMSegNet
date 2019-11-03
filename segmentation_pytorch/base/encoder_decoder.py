@@ -5,7 +5,7 @@ from .model import Model
 
 class EncoderDecoder(Model):
 
-    def __init__(self, encoder, decoder, activation):
+    def __init__(self, encoder, decoder, activation, multi_stage=False):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder

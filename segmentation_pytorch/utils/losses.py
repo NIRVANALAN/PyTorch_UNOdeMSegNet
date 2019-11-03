@@ -76,12 +76,13 @@ class ExtremeLoss(nn.Module):
 class PixelCELoss(nn.Module):
 	__name__ = 'pixel_ce_loss'
 
-	def __init__(self, normalize_size=False, num_classes=8, weight=None):
+	def __init__(self, normalize_size=False, num_classes=8, weight=None, multi_stage=False):
 		"""
 
 		:type weight: list
 		"""
 		super().__init__()
+		self.multi_stage = multi_stage
 		if weight is not None:
 			weight = torch.Tensor(weight)
 			pass
@@ -89,20 +90,33 @@ class PixelCELoss(nn.Module):
 		self.normalize_size = normalize_size
 		self.num_classes = num_classes
 
-	def forward(self, pred, label):
-		# Calculation
+	@staticmethod
+	def reshape_pred_label(pred, label):
 		ps_pred = pred
 		ps_label = label
 		N, C, H, W = ps_pred.size()
 		assert ps_label.size() == (N, H, W)
-
 		# shape [N, C, H, W] -> [N, H, W, C] -> [NHW, C]
 		ps_pred = ps_pred.permute(0, 2, 3, 1).contiguous().view(-1, C)
-
 		# shape [N, H, W] -> [NHW]
 		ps_label = ps_label.view(N * H * W).detach()
-		loss = self.criterion(ps_pred, ps_label)
+		return ps_pred, ps_label
 
+	def forward(self, pred, label):
+		# Calculation
+		if self.multi_stage:
+			assert type(label) is list
+			assert type(pred) is list
+			assert len(label) == len(pred)
+			stage_number = len(label)
+			loss = 0.
+			for stage in range(stage_number):
+				ps_pred, ps_label = self.reshape_pred_label(pred[stage], label[stage])
+				loss += self.criterion(ps_pred, ps_label)
+			loss /= stage_number
+		else:
+			ps_pred, ps_label = self.reshape_pred_label(pred, label)
+			loss = self.criterion(ps_pred, ps_label)
 		return loss
 
 
