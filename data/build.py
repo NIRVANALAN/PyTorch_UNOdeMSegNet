@@ -1,5 +1,6 @@
 import torch
 from torchvision import transforms
+from torch.utils.data import RandomSampler
 from .Microscopy_Data import MicroscopyDataset, TiffDataset
 from .DataAugment import WaveletDataAugmemt
 
@@ -7,10 +8,11 @@ from .DataAugment import WaveletDataAugmemt
 def build_train_loader(args):
 	# normalize = transforms.Normalize(
 	#     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-	normalize = transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+	# normalize = transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+	normalize = transforms.Normalize([0.5], [0.5])
 
 	train_transform = transforms.Compose([
-		transforms.Grayscale(num_output_channels=3),
+		transforms.Grayscale(num_output_channels=1),
 		transforms.ToTensor(),
 		normalize,
 	])
@@ -25,15 +27,20 @@ def build_train_loader(args):
 			False),
 		v_flip=args.data.v_flip,
 		h_flip=args.data.h_flip,
-		multi_stage=args.get('multi_stage', False))
+		multi_stage=args.model.get('num_res', None))
 	if args.data.wavelet:
 		train_dataset = WaveletDataAugmemt(train_dataset, 'db1', 3)
 	train_batch_size = args.data.train_batch_size
-
+	sampler_rate = args.data.get('sampler_rate', 0.5)
+	print(f'random_sampler_rate: {sampler_rate}')
+	Microscopy_random_sampler = RandomSampler(data_source=train_dataset, num_samples=int(train_dataset.__len__() *
+																						 sampler_rate),
+											  replacement=True)
 	train_loader = torch.utils.data.DataLoader(
 		dataset=train_dataset,
 		batch_size=train_batch_size,
-		num_workers=args.data.workers)
+		num_workers=args.data.workers,
+		sampler=Microscopy_random_sampler)
 	return train_loader, train_dataset
 
 
@@ -73,7 +80,7 @@ def build_inference_loader(args):
 		args.data.root,
 		args.data.slide_name,
 		args.data.test_img_size,
-		transform=val_transform, overlap_size=args.data.overlap_size, evaluate=args.get('eval', False))
+		transform=val_transform, overlap_size=args.data.get('overlap_size', 480), evaluate=args.get('eval', False))
 	test_batch_size = args.data.test_batch_size
 	shape = inference_dataset.get_img_array_shape()
 	if args.data.wavelet:

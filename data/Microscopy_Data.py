@@ -27,9 +27,10 @@ category = ['PlasmaMembrane', 'NuclearMembrane', 'MitochondriaDark', 'Mitochondr
 			'LipidDroplet']
 
 
-def get_block_label(patch):
+def get_block_label(patch, axis=-1):
 	"""
 
+	:param axis:
 	:type patch:np.ndarray
 	"""
 	from collections import Counter
@@ -146,7 +147,7 @@ class MicroscopyDataset(Dataset):
 			shuffle_list=True,
 			coarse_dsr=None,
 			multi_stage=False):
-		self.multi_stage = multi_stage
+		self.num_res = multi_stage
 		self.transform = transform
 		self.root = root
 		self.is_flip = h_flip or v_flip  # TODO: fix args
@@ -220,11 +221,13 @@ class MicroscopyDataset(Dataset):
 			# add channel dim
 			img = img.unsqueeze(0)
 		# load multi-stage label
-		if self.multi_stage:
+		if self.num_res:
 			masks = [mask]
-			for dsr in range(2, self.multi_stage + 1):
-				dsr = pow(2, dsr)
-				masks.append(block_reduce(mask, (dsr, dsr), get_block_label))
+			for res in range(self.num_res - 1):
+				# masks.append(block_reduce(mask, block_size=(dsr, dsr), func=get_block_label))
+				masks.append(masks[res][::4, ::4])
+			# smaller to larger
+			masks.reverse()
 			return img, masks
 		return img, mask
 
@@ -239,7 +242,7 @@ class TiffDataset(Dataset):
 		self.transform = transform
 		self.target_transform = target_transform
 		self.img_array = (tiff.imread(os.path.join(root, 'raw', slide_name)))
-		self.label_array = (np.load(os.path.join(root, 'label', slide_name.split('.')[0] + '.npy')))
+		self.label_array = (np.load(os.path.join(root, 'labels', slide_name.split('.')[0] + '.npy')))
 		if self.img_array.dtype != 'uint16':
 			self.img_array = np.uint16(self.img_array)
 		self.slide_img = Image.fromarray(self.img_array)

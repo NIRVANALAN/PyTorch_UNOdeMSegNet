@@ -13,6 +13,7 @@ data:
   h_flip: True
   v_flip: True
   wavelet: False
+  sampler_rate: 0.5
 model:
   arch: se_resnet50
   num_classes: 8 # with BG as a class
@@ -28,11 +29,11 @@ loss:
 #  class_weight: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
   # ['bg', 'PlasmaMembrane', 'NuclearMembrane', 'MitochondriaDark', 'MitochondriaLight', 'Desmosome',
   #            'Cytoskeleton', 'LipidDroplet']
-  class_weight: [1.0, 10.0, 10.0, 1.0, 1.0, 10.0, 1.0, 10.0]
+  class_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   cls_size_average: True
   kpt_size_average: True
   cls_loss: CE
-epochs: 100
+epochs: 200
 multi_stage: 2
 single_channel_target: False
 save_path: checkpoints/microscopy/512/mt_unet

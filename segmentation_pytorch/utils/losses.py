@@ -1,4 +1,5 @@
 import torch
+import pdb
 import torch.nn as nn
 from . import functions as F
 import numpy as np
@@ -104,6 +105,7 @@ class PixelCELoss(nn.Module):
 
 	def forward(self, pred, label):
 		# Calculation
+		# pdb.set_trace()
 		if self.multi_stage:
 			assert type(label) is list
 			assert type(pred) is list
