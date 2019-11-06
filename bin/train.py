@@ -111,8 +111,8 @@ def main(args):
 		train_logs = train_epoch.run(train_loader)
 		test_valid_log = {'miou': np.array([]), 'mpa': np.array([])}
 		for test_slide in test_slides:
-			valid_logs = valid_epoch.run(test_loader[test_slides])
-			print(f'{test_slides}, miou:{valid_logs["miou"]}, mpa:{valid_logs["mpa"]}')
+			valid_logs = valid_epoch.run(test_loader[test_slide])
+			print(f'{test_slide}, miou:{valid_logs["miou"]}, mpa:{valid_logs["mpa"]}')
 			test_valid_log['miou'] = np.append(test_valid_log['miou'], valid_logs['miou'])
 			test_valid_log['mpa'] = np.append(test_valid_log['mpa'], valid_logs['mpa'])
 

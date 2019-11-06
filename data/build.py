@@ -45,9 +45,9 @@ def build_train_loader(args):
 
 
 def build_val_loader(args):
-	normalize = transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+	normalize = transforms.Normalize([0.5], [0.5])
 	val_transform = transforms.Compose([
-		transforms.Grayscale(num_output_channels=3),
+		transforms.Grayscale(num_output_channels=1),
 		transforms.ToTensor(),
 		normalize,
 	])

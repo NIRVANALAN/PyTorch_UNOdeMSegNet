@@ -99,7 +99,6 @@ class TrainEpoch(Epoch):
 		return loss, prediction
 
 
-
 class ValidEpoch(Epoch):
 
 	def __init__(self, model, loss, metrics, device='cpu', verbose=True):
