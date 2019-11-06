@@ -1,8 +1,9 @@
 import torch
 from torchvision import transforms
-from torch.utils.data import RandomSampler
+from torch.utils.data import RandomSampler, SubsetRandomSampler
 from .Microscopy_Data import MicroscopyDataset, TiffDataset
 from .DataAugment import WaveletDataAugmemt
+from skimage.measure import block_reduce
 
 
 def build_train_loader(args):
@@ -34,9 +35,7 @@ def build_train_loader(args):
 	train_batch_size = args.data.train_batch_size
 	sampler_rate = args.data.get('sampler_rate', 0.5)
 	print(f'random_sampler_rate: {sampler_rate}')
-	Microscopy_random_sampler = RandomSampler(data_source=train_dataset, num_samples=int(train_dataset.__len__() *
-																						 sampler_rate),
-											  replacement=True)
+	Microscopy_random_sampler = SubsetRandomSampler(list(range(0, len(train_dataset), int(1 / sampler_rate))))
 	train_loader = torch.utils.data.DataLoader(
 		dataset=train_dataset,
 		batch_size=train_batch_size,

@@ -11,6 +11,7 @@ data:
   h_flip: True
   v_flip: True
   wavelet: False
+  sample_rate: 0.3
 model:
   arch: unet_ode
   num_classes: 8 # with BG as a class

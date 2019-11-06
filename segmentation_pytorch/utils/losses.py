@@ -122,6 +122,7 @@ class PixelCELoss(nn.Module):
 			for stage in range(0, stage_number - 1):
 				loss += self.kldiv_criterion(torch.log_softmax(pred[stage], dim=1), label[stage].to(pred[stage].dtype))
 			loss /= stage_number
+			print(loss)
 		else:
 			ps_pred, ps_label = self.reshape_pred_label(pred, label)
 			loss = self.criterion(ps_pred, ps_label)

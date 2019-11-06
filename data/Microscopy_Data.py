@@ -27,18 +27,32 @@ category = ['PlasmaMembrane', 'NuclearMembrane', 'MitochondriaDark', 'Mitochondr
 			'LipidDroplet']
 
 
-def get_block_label(patch, axis=-1):
-	"""
+def alllabel2onehot(y, nclass=8):
+	# import numpy as np
+	py = np.zeros(y.shape + (nclass,))
+	for c in range(nclass):
+		py[..., c][y == c] = 1.0
+	py = np.transpose(py, (2, 0, 1))
+	return py
 
-	:param axis:
-	:type patch:np.ndarray
-	"""
-	from collections import Counter
-	import operator
-	pixel_class = dict(Counter(patch.flatten()))
-	sorted_pixel = sorted(pixel_class.items(), key=operator.itemgetter(1), reverse=True)
-	label, _ = sorted_pixel[0]
-	return label
+
+def downsample_label(img, dsr):
+	# import numpy as np
+	return block_reduce(img, (1, dsr, dsr), np.mean)
+
+
+# def get_block_label(patch, axis=-1):
+# 	"""
+#
+# 	:param axis:
+# 	:type patch:np.ndarray
+# 	"""
+# 	from collections import Counter
+# 	import operator
+# 	pixel_class = dict(Counter(patch.flatten()))
+# 	sorted_pixel = sorted(pixel_class.items(), key=operator.itemgetter(1), reverse=True)
+# 	label, _ = sorted_pixel[0]
+# 	return label
 
 
 def load_pil(img, shape=None):
@@ -209,17 +223,18 @@ class MicroscopyDataset(Dataset):
 			masks = [mask]
 			for res in range(1, self.num_res):
 				dsr = pow(self.scale_factor, res)
-				mask_size = int(self.img_size / dsr)
-				# img = cv2.resize(
-				# 	img, (self.img_size, self.img_size), cv2.INTER_NEAREST)
-				# mask = cv2.resize(
-				coarse_mask = torch.empty((len(category)+1, mask_size, mask_size))
-				for i in range(mask_size):
-					for j in range(mask_size):
-						for k in range(len(category)):
-							coarse_mask[k, i, j] = torch.tensor(np.sum(mask[i:i + dsr, j:j + dsr] == k))
-
-				coarse_mask /= dsr
+				# mask_size = int(self.img_size / dsr)
+				# # img = cv2.resize(
+				# # 	img, (self.img_size, self.img_size), cv2.INTER_NEAREST)
+				# # mask = cv2.resize(
+				# coarse_mask = torch.empty((len(category) + 1, mask_size, mask_size))
+				# for i in range(mask_size):
+				# 	for j in range(mask_size):
+				# 		for k in range(len(category)):
+				# 			coarse_mask[k, i, j] = torch.tensor(
+				# 				np.sum(mask[i * dsr:i * dsr + dsr, j * dsr:j * dsr + dsr] == k))
+				# coarse_mask /= dsr ** 2
+				coarse_mask = downsample_label(alllabel2onehot(mask), dsr)
 				masks.append(coarse_mask)
 			masks.reverse()
 			mask = masks
