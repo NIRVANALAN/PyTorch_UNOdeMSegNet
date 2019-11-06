@@ -220,8 +220,9 @@ class MicroscopyDataset(Dataset):
 			img = img.unsqueeze(0)
 		# multi resolution label
 		if self.num_res is not None:
-			masks = [mask]
-			for res in range(1, self.num_res):
+			# masks = [mask]
+			masks = []
+			for res in range(0, self.num_res):
 				dsr = pow(self.scale_factor, res)
 				# mask_size = int(self.img_size / dsr)
 				# # img = cv2.resize(
