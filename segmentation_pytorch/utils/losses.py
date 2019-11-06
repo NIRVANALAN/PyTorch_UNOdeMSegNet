@@ -84,6 +84,8 @@ class PixelCELoss(nn.Module):
 		"""
 		super().__init__()
 		self.multi_stage = multi_stage
+		if self.multi_stage:
+			self.kldiv_criterion = torch.nn.KLDivLoss()
 		if weight is not None:
 			weight = torch.Tensor(weight)
 			pass
@@ -110,11 +112,15 @@ class PixelCELoss(nn.Module):
 			assert type(label) is list
 			assert type(pred) is list
 			assert len(label) == len(pred)
+			assert all([pred[i].shape == label[i].shape for i in range(len(pred)-1)])
 			stage_number = len(label)
 			loss = 0.
-			for stage in range(stage_number):
-				ps_pred, ps_label = self.reshape_pred_label(pred[stage], label[stage])
-				loss += self.criterion(ps_pred, ps_label)
+			# for stage in range(stage_number):
+			stage = -1
+			ps_pred, ps_label = self.reshape_pred_label(pred[stage], label[stage])
+			loss += self.criterion(ps_pred, ps_label)
+			for stage in range(0, stage_number - 1):
+				loss += self.kldiv_criterion(torch.log_softmax(pred[stage], dim=1), label[stage].to(pred[stage].dtype))
 			loss /= stage_number
 		else:
 			ps_pred, ps_label = self.reshape_pred_label(pred, label)
@@ -223,5 +229,3 @@ class PixelNLLLoss(nn.Module):
 		loss = self.criterion(ps_pred, ps_label)
 
 		return loss
-
-

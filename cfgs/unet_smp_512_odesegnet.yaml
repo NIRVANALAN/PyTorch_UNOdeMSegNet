@@ -16,8 +16,8 @@ model:
   num_classes: 8 # with BG as a class
   dim_in: 1
   dim_latent : 32
-  num_res: 4
-  scale_factor: 4
+  num_res: 2
+  scale_factor: 2
   pretrained: ''
   ignore: ['fc.weight', 'fc.bias']
 train:

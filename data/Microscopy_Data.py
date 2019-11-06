@@ -145,8 +145,9 @@ class MicroscopyDataset(Dataset):
 			include_bg=True,
 			normalize_color=False,
 			shuffle_list=True,
-			coarse_dsr=None,
+			scale_factor=None,
 			multi_stage=False):
+		self.scale_factor = scale_factor
 		self.num_res = multi_stage
 		self.transform = transform
 		self.root = root
@@ -159,7 +160,6 @@ class MicroscopyDataset(Dataset):
 		self.images = read_object_labels(train_list, shuffle=shuffle_list)
 		self.single_channel_target = single_channel_target
 		self.normalize_color = normalize_color
-		self.coarse_dsr = coarse_dsr
 
 	def __len__(self):
 		return len(self.images)
@@ -184,22 +184,6 @@ class MicroscopyDataset(Dataset):
 
 		assert img.shape[0] == self.img_size
 		# scale image to fixed size
-		if self.coarse_dsr is not None:
-			self.img_size = int(self.img_size / self.coarse_dsr)
-			img = cv2.resize(
-				img, (self.img_size, self.img_size), cv2.INTER_NEAREST)
-			# mask = cv2.resize(
-			coarse_mask = np.empty((len(category), self.img_size, self.img_size))
-			for i in range(self.img_size):
-				for j in range(self.img_size):
-					for k in range(len(category)):
-						coarse_mask[k, i, j] = np.sum(mask[i:i * self.coarse_dsr, j:j * self.coarse_dsr] == k)
-
-			coarse_mask /= self.coarse_dsr ** 2
-			mask = coarse_mask
-		# 	mask, (self.img_size, self.img_size), cv2.INTER_NEAREST)
-
-		# flipping: rotation + mirror (8 possibilities)
 		if self.is_flip:
 			if np.random.random() < 0.5:
 				# mirror
@@ -220,15 +204,35 @@ class MicroscopyDataset(Dataset):
 		if len(img.shape) == 2:
 			# add channel dim
 			img = img.unsqueeze(0)
-		# load multi-stage label
-		if self.num_res:
+		# multi resolution label
+		if self.num_res is not None:
 			masks = [mask]
-			for res in range(self.num_res - 1):
-				# masks.append(block_reduce(mask, block_size=(dsr, dsr), func=get_block_label))
-				masks.append(masks[res][::4, ::4])
-			# smaller to larger
+			for res in range(1, self.num_res):
+				dsr = pow(self.scale_factor, res)
+				mask_size = int(self.img_size / dsr)
+				# img = cv2.resize(
+				# 	img, (self.img_size, self.img_size), cv2.INTER_NEAREST)
+				# mask = cv2.resize(
+				coarse_mask = torch.empty((len(category)+1, mask_size, mask_size))
+				for i in range(mask_size):
+					for j in range(mask_size):
+						for k in range(len(category)):
+							coarse_mask[k, i, j] = torch.tensor(np.sum(mask[i:i + dsr, j:j + dsr] == k))
+
+				coarse_mask /= dsr
+				masks.append(coarse_mask)
 			masks.reverse()
-			return img, masks
+			mask = masks
+		# flipping: rotation + mirror (8 possibilities)
+		# load multi-stage label
+		# if self.num_res:
+		# 	masks = [mask]
+		# 	for res in range(self.num_res - 1):
+		# 		# masks.append(block_reduce(mask, block_size=(dsr, dsr), func=get_block_label))
+		# 		masks.append(masks[res][::4, ::4])
+		# 	# smaller to larger
+		# 	masks.reverse()
+		# 	return img, masks
 		return img, mask
 
 
