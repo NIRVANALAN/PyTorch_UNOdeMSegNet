@@ -85,7 +85,7 @@ class PixelCELoss(nn.Module):
 		super().__init__()
 		self.multi_stage = multi_stage
 		if self.multi_stage:
-			self.kldiv_criterion = torch.nn.KLDivLoss()
+			self.kldiv_criterion = torch.nn.KLDivLoss(reduction='batchmean')
 		if weight is not None:
 			weight = torch.Tensor(weight)
 			pass
