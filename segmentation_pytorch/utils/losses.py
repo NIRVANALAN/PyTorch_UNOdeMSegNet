@@ -77,7 +77,7 @@ class ExtremeLoss(nn.Module):
 class PixelCELoss(nn.Module):
 	__name__ = 'pixel_ce_loss'
 
-	def __init__(self, normalize_size=False, num_classes=8, weight=None, multi_stage=False):
+	def __init__(self, num_classes=8, weight=None, multi_stage=False):
 		"""
 
 		:type weight: list
@@ -89,8 +89,7 @@ class PixelCELoss(nn.Module):
 		if weight is not None:
 			weight = torch.Tensor(weight)
 			pass
-		self.criterion = torch.nn.CrossEntropyLoss(reduction='none' if normalize_size else 'mean', weight=weight)
-		self.normalize_size = normalize_size
+		self.criterion = torch.nn.CrossEntropyLoss(reduction='mean', weight=weight)
 		self.num_classes = num_classes
 
 	@staticmethod
@@ -116,13 +115,16 @@ class PixelCELoss(nn.Module):
 			stage_number = len(label)
 			loss = 0.
 			# for stage in range(stage_number):
-			stage = -1
-			ps_pred, ps_label = self.reshape_pred_label(pred[stage], label[stage])
-			loss += self.criterion(ps_pred, ps_label)
-			for stage in range(0, stage_number - 1):
-				loss += self.kldiv_criterion(torch.log_softmax(pred[stage], dim=1), label[stage].to(pred[stage].dtype))
+			for stage in range(stage_number):
+				loss += -(label[stage] * torch.log_softmax(pred[stage], dim=1)).mean(-1).mean(-1).sum(-1).mean(-1)
 			loss /= stage_number
-			print(loss)
+			# stage = -1
+			# ps_pred, ps_label = self.reshape_pred_label(pred[stage], label[stage])
+			# loss += self.criterion(ps_pred, ps_label)
+			# for stage in range(0, stage_number - 1):
+			# 	loss += self.kldiv_criterion(torch.log_softmax(pred[stage], dim=1), label[stage].to(pred[stage].dtype))
+			# loss /= stage_number
+			# print(loss)
 		else:
 			ps_pred, ps_label = self.reshape_pred_label(pred, label)
 			loss = self.criterion(ps_pred, ps_label)
