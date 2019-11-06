@@ -117,5 +117,7 @@ class ValidEpoch(Epoch):
 	def batch_update(self, x, y):
 		with torch.no_grad():
 			prediction = self.model.forward(x)
-			loss = self.loss(prediction, y)
+			if isinstance(prediction, list):
+				prediction = prediction[-1]
+			loss = self.loss(prediction, y, self.model.training)
 		return loss, prediction

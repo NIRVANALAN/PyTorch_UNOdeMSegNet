@@ -106,7 +106,6 @@ def main(args):
 		tiff_loader, tiff_dataset, shape = build_inference_loader(args)
 		test_loader[test_slide] = tiff_loader
 	for i in range(0, num_epochs):
-
 		print('\nEpoch: {}  lr: {}'.format(i, optimizer.param_groups[0]['lr']))
 		train_logs = train_epoch.run(train_loader)
 		test_valid_log = {'miou': np.array([]), 'mpa': np.array([])}
@@ -115,9 +114,7 @@ def main(args):
 			print(f'{test_slide}, miou:{valid_logs["miou"]}, mpa:{valid_logs["mpa"]}')
 			test_valid_log['miou'] = np.append(test_valid_log['miou'], valid_logs['miou'])
 			test_valid_log['mpa'] = np.append(test_valid_log['mpa'], valid_logs['mpa'])
-
 		exp_lr_scheduler.step()
-
 		# do something (save model, change lr, etc.)
 		if max_score < test_valid_log['miou'].mean():
 			max_score = test_valid_log['miou'].mean()  # mean

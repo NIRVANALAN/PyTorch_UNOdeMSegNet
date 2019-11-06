@@ -104,27 +104,28 @@ class PixelCELoss(nn.Module):
 		ps_label = ps_label.view(N * H * W).detach()
 		return ps_pred, ps_label
 
-	def forward(self, pred, label):
+	def forward(self, pred, label, training=True):
 		# Calculation
-		# pdb.set_trace()
-		if self.multi_stage:
+		if self.multi_stage and training:
 			assert type(label) is list
 			assert type(pred) is list
 			assert len(label) == len(pred)
-			assert all([pred[i].shape == label[i].shape for i in range(len(pred)-1)])
+			assert all([pred[i].shape == label[i].shape for i in range(len(pred) - 1)])
 			stage_number = len(label)
 			loss = 0.
 			# for stage in range(stage_number):
 			for stage in range(stage_number):
-				loss += -(label[stage] * torch.log_softmax(pred[stage], dim=1)).mean(-1).mean(-1).sum(-1).mean(-1)
+				loss += -(label[stage].to(pred[stage].dtype) * torch.log_softmax(pred[stage], dim=1)).mean(-1).mean(
+					-1).sum(
+					-1).mean(-1)
 			loss /= stage_number
-			# stage = -1
-			# ps_pred, ps_label = self.reshape_pred_label(pred[stage], label[stage])
-			# loss += self.criterion(ps_pred, ps_label)
-			# for stage in range(0, stage_number - 1):
-			# 	loss += self.kldiv_criterion(torch.log_softmax(pred[stage], dim=1), label[stage].to(pred[stage].dtype))
-			# loss /= stage_number
-			# print(loss)
+		# stage = -1
+		# ps_pred, ps_label = self.reshape_pred_label(pred[stage], label[stage])
+		# loss += self.criterion(ps_pred, ps_label)
+		# for stage in range(0, stage_number - 1):
+		# 	loss += self.kldiv_criterion(torch.log_softmax(pred[stage], dim=1), label[stage].to(pred[stage].dtype))
+		# loss /= stage_number
+		# print(loss)
 		else:
 			ps_pred, ps_label = self.reshape_pred_label(pred, label)
 			loss = self.criterion(ps_pred, ps_label)
