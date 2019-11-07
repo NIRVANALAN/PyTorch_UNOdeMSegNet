@@ -121,7 +121,7 @@ def main(args):
 			if not os.path.isdir(args.save_path):
 				os.makedirs(args.save_path)
 			torch.save(
-				model,
+				model.state_dict(),
 				os.path.join(
 					args.save_path,
 					f'./{max_score}.pth'))
