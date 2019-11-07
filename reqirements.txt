@@ -5,3 +5,4 @@ tqdm
 numpy
 git+https://github.com/qubvel/segmentation_models.pytorch
 matplotlib=2.2.4
+pydensecrf
