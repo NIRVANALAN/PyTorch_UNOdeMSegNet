@@ -113,9 +113,9 @@ def main(args):
 	for i in range(0, num_epochs):
 		print('\nEpoch: {}  lr: {}'.format(i, optimizer.param_groups[0]['lr']))
 		train_logs = train_epoch.run(train_loader)
+		exp_lr_scheduler.step(i)
 		valid_logs = valid_epoch.run(valid_loader)
-		# test on testset
-		exp_lr_scheduler.step()
+		# ================= test on testset ===================== #
 		if not num_epochs % 10:
 			print(f'epoch :{num_epochs}, testing on 3 slides')
 			test_log = {'miou': np.array([]), 'mpa': np.array([])}
@@ -124,8 +124,7 @@ def main(args):
 				print(f'{test_slide}, miou:{test_logs["miou"]}, mpa:{test_logs["mpa"]}')
 				test_log['miou'] = np.append(test_log['miou'], test_logs['miou'])
 				test_log['mpa'] = np.append(test_log['mpa'], test_logs['mpa'])
-		# do something (save model, change lr, etc.)
-		# save model
+		# ================= save model and delete old models ===================== #
 		print(f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}')
 		if i > save_model_iter and model_log[i - save_model_iter]['miou'] < max_miou:
 			os.remove(

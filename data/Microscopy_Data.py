@@ -1,9 +1,9 @@
 import io
+import pdb
 import tifffile as tiff
 import os
 import os.path as osp
 import cv2
-import pdb
 import random
 import sys
 import traceback
@@ -219,7 +219,7 @@ class MicroscopyDataset(Dataset):
 			# add channel dim
 			img = img.unsqueeze(0)
 		# multi resolution label
-		if self.num_res is not None:
+		if self.num_res:
 			# masks = [mask]
 			masks = []
 			for res in range(0, self.num_res):

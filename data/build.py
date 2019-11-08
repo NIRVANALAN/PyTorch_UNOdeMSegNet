@@ -59,13 +59,17 @@ def build_val_loader(args):
 		transform=val_transform,
 		h_flip=False,
 		v_flip=False)
+	sampler_rate = args.data.get('sampler_rate', 0.5)
+	print(f'val_dataset random_sampler_rate: {sampler_rate}')
+	Microscopy_random_sampler = SubsetRandomSampler(list(range(0, len(val_dataset), int(1 / sampler_rate))))
 	if args.data.wavelet:
 		val_dataset = WaveletDataAugmemt(val_dataset, 'db1', 3)
 	test_batch_size = args.data.test_batch_size
 	val_loader = torch.utils.data.DataLoader(
 		val_dataset,
 		batch_size=test_batch_size,
-		num_workers=args.data.workers)
+		num_workers=args.data.workers,
+		sampler=Microscopy_random_sampler)
 	return val_loader, val_dataset
 
 
