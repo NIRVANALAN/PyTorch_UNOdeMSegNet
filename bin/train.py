@@ -126,13 +126,13 @@ def main(args):
 				test_log['mpa'] = np.append(test_log['mpa'], test_logs['mpa'])
 		# ================= save model and delete old models ===================== #
 		print(f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}')
-		if i > save_model_iter and model_log[i - save_model_iter]['miou'] < max_miou:
+		if i > save_model_iter and float(model_log[i - save_model_iter]['miou']) < max_miou:
 			os.remove(
 				os.path.join(args.save_path, f'{i - save_model_iter}_{model_log[i - save_model_iter]["miou"]}.pth'))
 			print(f'delete model: {i - save_model_iter}_{model_log[i - save_model_iter]["miou"]}.pth')
 		model_log[i] = {'miou': f'{valid_logs["miou"].mean():.4}', 'mpa': f'{valid_logs["mpa"].mean(): .4}'}
-		if max_miou < model_log[i]['miou']:
-			max_miou = model_log[i]['miou']  # mean
+		if max_miou < float(model_log[i]['miou']):
+			max_miou = float(model_log[i]['miou'])  # mean
 		torch.save(model.state_dict(), os.path.join(args.save_path, f'{i}_{valid_logs["miou"]:.4}.pth'))
 
 
