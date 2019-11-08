@@ -53,7 +53,7 @@ def main(args):
 	metrics = [
 		MIoUMetric(num_classes=num_classes, ignore_index=None),
 		MPAMetric(num_classes=num_classes,
-				  ignore_index=None)  # ignore background
+		          ignore_index=None)  # ignore background
 	]
 
 	device = 'cuda'
@@ -90,15 +90,20 @@ def main(args):
 		verbose=True,
 	)
 
-	max_score = 0
+	max_miou = 0
 
 	exp_lr_scheduler = lr_scheduler.MultiStepLR(
-		optimizer, milestones=args.train.lr_iters, gamma=0.1)
+		optimizer, milestones=args.train.lr_iters, gamma=args.train.lr_gamma)
+	save_model_iter = args.train.save_iter
+	print(f'training cfg: {args.train}')
 
 	num_epochs = args.get('epochs', 200)
 	test_slides = args.get('test_slides', ['S1_Helios_1of3_v1270.tiff', 'NA_T4_122117_01.tif',
-										   'NA_T4R_122117_19.tif', ])
+	                                       'NA_T4R_122117_19.tif', ])
 	test_loader = {}
+	model_log = {}
+	if not os.path.isdir(args.save_path):
+		os.makedirs(args.save_path)
 	for test_slide in test_slides:
 		# print(f'inference {test_slide}')
 		args.data.slide_name = test_slide
@@ -108,26 +113,28 @@ def main(args):
 	for i in range(0, num_epochs):
 		print('\nEpoch: {}  lr: {}'.format(i, optimizer.param_groups[0]['lr']))
 		train_logs = train_epoch.run(train_loader)
-		test_valid_log = {'miou': np.array([]), 'mpa': np.array([])}
-		for test_slide in test_slides:
-			valid_logs = valid_epoch.run(test_loader[test_slide])
-			print(f'{test_slide}, miou:{valid_logs["miou"]}, mpa:{valid_logs["mpa"]}')
-			test_valid_log['miou'] = np.append(test_valid_log['miou'], valid_logs['miou'])
-			test_valid_log['mpa'] = np.append(test_valid_log['mpa'], valid_logs['mpa'])
+		valid_logs = valid_epoch.run(valid_loader)
+		# test on testset
 		exp_lr_scheduler.step()
+		if not num_epochs % 10:
+			print(f'epoch :{num_epochs}, testing on 3 slides')
+			test_log = {'miou': np.array([]), 'mpa': np.array([])}
+			for test_slide in test_slides:
+				test_logs = valid_epoch.run(test_loader[test_slide])
+				print(f'{test_slide}, miou:{test_logs["miou"]}, mpa:{test_logs["mpa"]}')
+				test_log['miou'] = np.append(test_log['miou'], test_logs['miou'])
+				test_log['mpa'] = np.append(test_log['mpa'], test_logs['mpa'])
 		# do something (save model, change lr, etc.)
-		if max_score < test_valid_log['miou'].mean():
-			max_score = test_valid_log['miou'].mean()  # mean
-			if not os.path.isdir(args.save_path):
-				os.makedirs(args.save_path)
-			torch.save(
-				model.state_dict(),
-				os.path.join(
-					args.save_path,
-					f'./{max_score}.pth'))
-			print(
-				f'Model saved: MIOU:{test_valid_log["miou"]}, MPA:{test_valid_log["mpa"]}')
-
+		# save model
+		print(f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}')
+		if i > save_model_iter and model_log[i - save_model_iter]['miou'] < max_miou:
+			os.remove(
+				os.path.join(args.save_path, f'{i - save_model_iter}_{model_log[i - save_model_iter]["miou"]}.pth'))
+			print(f'delete model: {i - save_model_iter}_{model_log[i - save_model_iter]["miou"]}.pth')
+		model_log[i] = {'miou': f'{valid_logs["miou"].mean():.4}', 'mpa': f'{valid_logs["mpa"].mean(): .4}'}
+		if max_miou < model_log[i]['miou']:
+			max_miou = model_log[i]['miou']  # mean
+		torch.save(model.state_dict(), os.path.join(args.save_path, f'{i}_{valid_logs["miou"]:.4}.pth'))
 
 
 if __name__ == '__main__':
