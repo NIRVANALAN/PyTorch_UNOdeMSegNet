@@ -33,7 +33,7 @@ def build_train_loader(args):
 	if args.data.wavelet:
 		train_dataset = WaveletDataAugmemt(train_dataset, 'db1', 3)
 	train_batch_size = args.data.train_batch_size
-	sampler_rate = args.data.get('sampler_rate', 0.5)
+	sampler_rate = args.data.get('train_sampler_rate', 0.5)
 	print(f'random_sampler_rate: {sampler_rate}')
 	Microscopy_random_sampler = SubsetRandomSampler(list(range(0, len(train_dataset), int(1 / sampler_rate))))
 	train_loader = torch.utils.data.DataLoader(
@@ -59,7 +59,7 @@ def build_val_loader(args):
 		transform=val_transform,
 		h_flip=False,
 		v_flip=False)
-	sampler_rate = args.data.get('sampler_rate', 0.5)
+	sampler_rate = args.data.get('valid_sampler_rate', 0.5)
 	print(f'val_dataset random_sampler_rate: {sampler_rate}')
 	Microscopy_random_sampler = SubsetRandomSampler(list(range(0, len(val_dataset), int(1 / sampler_rate))))
 	if args.data.wavelet:

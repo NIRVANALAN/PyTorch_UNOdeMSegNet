@@ -1,0 +1,44 @@
+data:
+  root: /mnt/lustre/lanyushi/repos/ut/dataset
+  train_list: /mnt/lustre/lanyushi/repos/ut/dataset/512/ratio1.0/train_list.txt
+  test_list: /mnt/lustre/lanyushi/repos/ut/dataset/512/ratio1.0/test_list.txt
+  train_img_size: 512
+  test_img_size: 512 # output size
+  train_batch_size: 4
+  test_batch_size: 8
+  workers: 0
+  rotate: 0
+  h_flip: True
+  v_flip: True
+  wavelet: False
+  sampler_rate: 1.0
+model:
+  arch: unet
+  encoder: se_resnet50
+  num_classes: 8 # with BG as a class
+#  dim_in: 1
+#  dim_latent : 32
+#  num_res: None
+#  scale_factor: 2
+  pretrained: ''
+  ignore: ['fc.weight', 'fc.bias']
+train:
+  lr: 0.01
+  lr_iters: [23,43,63,83,103,133,153,183]
+  warm_up: 10
+  lr_gamma: 0.77
+  momentum: 0.99
+  weight_decay: 0.0001
+  save_iter: 10
+loss:
+#  class_weight: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+  # ['bg', 'PlasmaMembrane', 'NuclearMembrane', 'MitochondriaDark', 'MitochondriaLight', 'Desmosome',
+  #            'Cytoskeleton', 'LipidDroplet']
+  class_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  cls_size_average: True
+  kpt_size_average: True
+  cls_loss: CE
+epochs: 200
+#multi_stage: True
+single_channel_target: False
+save_path: checkpoints/microscopy/512/SERes50_sample1.0

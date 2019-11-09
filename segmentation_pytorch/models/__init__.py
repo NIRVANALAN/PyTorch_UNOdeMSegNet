@@ -7,7 +7,7 @@ import pdb
 FACTORY = {
 	'unet': smp.Unet,
 	'unet_ode': UNOdeMSegNet,
-	'unet_wavelet': WaveletModel
+	# 'unet_wavelet': WaveletModel
 }
 
 
@@ -23,7 +23,10 @@ def create_model(args):
 							  n_classes=num_classes)
 		# pdb.set_trace()
 	else:
-		model = FACTORY[arch](encoder_name=arch, encoder_weights=None, activation='softmax', multi_stage=multi_stage)
+		model = FACTORY[arch](encoder_name=args.model.encoder,
+		                      encoder_weights=None,
+		                      activation='softmax',
+		                      classes=num_classes)
 	return model
 	# if args.data.get('wavelet', False):
 	# 	model = WaveletModel(

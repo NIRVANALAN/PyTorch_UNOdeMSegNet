@@ -7,7 +7,7 @@ if not os.getcwd() in sys.path:
 import torch
 # import segmentation_models_pytorch as smp
 import segmentation_pytorch as smp
-from torch.optim import lr_scheduler
+from warmup_scheduler import GradualWarmupScheduler
 import torch.nn as nn
 import numpy as np
 import time
@@ -58,7 +58,8 @@ def main(args):
 
 	device = 'cuda'
 	lr = args.train.lr
-	optimizer = torch.optim.Adam(params=model.parameters(), lr=lr)
+	optimizer = torch.optim.Adam(params=model.parameters(), lr=lr, weight_decay=args.train.get('weight_decay',
+	                                                                                           0.0005))
 	# optimizer = torch.optim.Adam([
 	# 	{'params': model.decoder.parameters(), 'lr': lr},
 	# 	# decrease lr for encoder in order not to permute
@@ -90,14 +91,15 @@ def main(args):
 		verbose=True,
 	)
 
-	max_miou = 0
-
-	exp_lr_scheduler = lr_scheduler.MultiStepLR(
-		optimizer, milestones=args.train.lr_iters, gamma=args.train.lr_gamma)
+	max_miou = 0.
+	num_epochs = args.get('epochs', 200)
+	scheduler_cosine = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_epochs)
+	scheduler_warmup = GradualWarmupScheduler(optimizer, total_epoch=args.train.get('warm_up', 10),
+	                                          multiplier=args.train.get('warm_up_multiplier', 8),
+	                                          after_scheduler=scheduler_cosine)
 	save_model_iter = args.train.save_iter
 	print(f'training cfg: {args.train}')
 
-	num_epochs = args.get('epochs', 200)
 	test_slides = args.get('test_slides', ['S1_Helios_1of3_v1270.tiff', 'NA_T4_122117_01.tif',
 	                                       'NA_T4R_122117_19.tif', ])
 	test_loader = {}
@@ -113,7 +115,6 @@ def main(args):
 	for i in range(0, num_epochs):
 		print('\nEpoch: {}  lr: {}'.format(i, optimizer.param_groups[0]['lr']))
 		train_logs = train_epoch.run(train_loader)
-		exp_lr_scheduler.step(i)
 		valid_logs = valid_epoch.run(valid_loader)
 		# ================= save model and delete old models ===================== #
 		model_log[i] = {'miou': f'{valid_logs["miou"].mean():.4}', 'mpa': f'{valid_logs["mpa"].mean(): .4}'}
@@ -126,6 +127,8 @@ def main(args):
 				os.path.join(args.save_path, f'{i - save_model_iter}_{model_log[i - save_model_iter]["miou"]}.pth'))
 			print(f'delete model: {i - save_model_iter}_{model_log[i - save_model_iter]["miou"]}.pth')
 
+		# ================= update lr ===================== #
+		scheduler_warmup.step(i)
 		# ================= test on testset ===================== #
 		if i % 10 == 9 or i == num_epochs - 1:
 			print(f'epoch :{num_epochs}, testing on 3 slides')
@@ -135,6 +138,7 @@ def main(args):
 				print(f'{test_slide}, miou:{test_logs["miou"]}, mpa:{test_logs["mpa"]}')
 				test_log['miou'] = np.append(test_log['miou'], test_logs['miou'])
 				test_log['mpa'] = np.append(test_log['mpa'], test_logs['mpa'])
+
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Softmax classification loss")

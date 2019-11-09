@@ -143,7 +143,7 @@ class SENet(nn.Module):
 
 	def __init__(self, block, layers, groups, reduction, dropout_p=0.2,
 				 inplanes=128, input_3x3=True, downsample_kernel_size=3,
-				 downsample_padding=1, num_classes=1000):
+				 downsample_padding=1, num_classes=1000, input_dim=1):
 		"""
 		Parameters
 		----------
@@ -191,7 +191,7 @@ class SENet(nn.Module):
 		self.inplanes = inplanes
 		if input_3x3:
 			layer0_modules = [
-				('conv1', nn.Conv2d(3, 64, 3, stride=2, padding=1,
+				('conv1', nn.Conv2d(input_dim, 64, 3, stride=2, padding=1,
 									bias=False)),
 				('bn1', nn.BatchNorm2d(64)),
 				('relu1', nn.ReLU(inplace=True)),
@@ -206,7 +206,7 @@ class SENet(nn.Module):
 			]
 		else:
 			layer0_modules = [
-				('conv1', nn.Conv2d(3, inplanes, kernel_size=7, stride=2,
+				('conv1', nn.Conv2d(input_dim, inplanes, kernel_size=7, stride=2,
 									padding=3, bias=False)),
 				('bn1', nn.BatchNorm2d(inplanes)),
 				('relu1', nn.ReLU(inplace=True)),
