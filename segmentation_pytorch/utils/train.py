@@ -3,7 +3,7 @@ import torch
 import pdb
 from tqdm import tqdm as tqdm
 from torchnet.meter import AverageValueMeter
-from ..models.CRF import dense_crf
+# from ..models.CRF import dense_crf
 
 
 class Epoch:

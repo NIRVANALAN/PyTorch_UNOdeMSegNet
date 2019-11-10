@@ -151,7 +151,7 @@ def main(args):
 		                                                            f'_{valid_logs["miou"]:.4}.pth'))
 		torch.save(optimizer.state_dict(), os.path.join(args.save_path, f'{save_prefix}_optimizer_{i}'
 		                                                                f'_{valid_logs["miou"]:.4}.pth'))
-		print(f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}')
+		print(f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}, best_miou: {max_miou}')
 		if i > save_model_iter and float(model_log[i - save_model_iter]['miou']) < max_miou:
 			os.remove(
 				os.path.join(args.save_path, f'{save_prefix}_model_{i - save_model_iter}'

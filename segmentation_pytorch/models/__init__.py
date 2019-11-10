@@ -12,7 +12,7 @@ FACTORY = {
 
 
 def create_model(args):
-	num_classes = args.model.get('num_classes', 8)
+	num_classes = args.data.get('num_classes', 8)
 	arch = args.model.arch
 	print(f'creating model: {args.model}')
 	if 'ode' in arch:
@@ -25,7 +25,7 @@ def create_model(args):
 	else:
 		model = FACTORY[arch](encoder_name=args.model.encoder,
 		                      encoder_weights=None,
-		                      activation='softmax',
+		                      activation=None,
 		                      classes=num_classes)
 	return model
 	# if args.data.get('wavelet', False):

@@ -1,6 +1,7 @@
 import torch
 import pdb
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 
 import neuode
@@ -66,10 +67,11 @@ class MultiResDMap(nn.Module):
 
 class MultiResMLP(nn.Module):
 
-	def __init__(self, num_res, dim_in, dim_out):
+	def __init__(self, num_res, dim_in, dim_out, softmax_activation=False):
 		super(MultiResMLP, self).__init__()
 
 		# separate mlp for each resolution
+		self.softmax_activation = softmax_activation
 		MIDDIM = dim_in * 2
 		self.mres_nets = nn.ModuleList()
 		for _ in range(num_res):
@@ -83,14 +85,20 @@ class MultiResMLP(nn.Module):
 		logits = []
 		for net, xi in zip(self.mres_nets, x):
 			logit = net(xi)
+			if self.softmax_activation:
+				logit = torch.log_softmax(logit, 1)
 			logits.append(logit)
 		return logits
 
 
 class UNOdeMSegNet(nn.Module):
 
-	def __init__(self, dim_in=1, n_classes=8, dim_latent=32, num_res=4, scale_factor=2):
+	def __init__(self, dim_in=1, n_classes=8, dim_latent=32, num_res=4, scale_factor=2, activation='softmax'):
 		super(UNOdeMSegNet, self).__init__()
+		if activation == 'softmax':
+			self.activation = nn.Softmax(1)
+		else:
+			self.activation = None
 		self.num_res = num_res
 
 		# expand from image to higher-dim feature maps
@@ -121,4 +129,26 @@ class UNOdeMSegNet(nn.Module):
 		x = self.cdfn_block(x)
 		x = self.classifier(x)
 
+		return x
+
+	def predict(self, x):
+		"""Inference method. Switch model to `eval` mode, call `.forward(x)`
+		and apply activation function (if activation is not `None`) with `torch.no_grad()`
+
+		Args:
+			x: 4D torch tensor with shape (batch_size, channels, height, width)
+
+		Return:
+			prediction: 4D torch tensor with shape (batch_size, classes, height, width)
+
+		"""
+		if self.training:
+			self.eval()
+
+		with torch.no_grad():
+			x = self.forward(x)
+			if isinstance(x, list):
+				x = x[-1]
+			if self.activation:
+				x = self.activation(x)
 		return x

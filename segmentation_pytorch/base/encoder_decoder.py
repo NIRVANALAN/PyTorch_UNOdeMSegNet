@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from .model import Model
-from ..models.CRF import dense_crf
 
 
 class EncoderDecoder(Model):

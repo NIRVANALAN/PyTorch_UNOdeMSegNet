@@ -6,10 +6,10 @@ import sys
 if not os.getcwd() in sys.path:
 	sys.path.append(os.getcwd())
 import segmentation_pytorch as smp
-from model import WaveletModel
 from segmentation_pytorch.utils.functions import confusion_matrix
 from segmentation_pytorch.utils.losses import PixelCELoss
 from segmentation_pytorch.utils.metrics import MIoUMetric, MPAMetric
+from segmentation_pytorch.models import create_model
 from data import build_inference_loader
 import webcolors
 from easydict import EasyDict
@@ -71,7 +71,9 @@ color = [
 
 #
 def inference_all_tiff(args):
-	model = torch.load(args.best_model)
+	model = create_model(args)
+	print(model)
+	model.load_state_dict(torch.load(args.best_model))
 	patch_size = args.data.test_img_size
 	print(f'patch_size:{patch_size}')
 	slides_dir = os.path.join(args.data.root, 'raw')

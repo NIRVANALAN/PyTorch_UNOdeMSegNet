@@ -202,6 +202,7 @@ urllib3==1.24.1
 visdom==0.1.8.9
 warmup-scheduler==0.1
 wcwidth==0.1.7
+webcolors==1.10
 webencodings==0.5.1
 websocket-client==0.56.0
 Werkzeug==0.14.1
