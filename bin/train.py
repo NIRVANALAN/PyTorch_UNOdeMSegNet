@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 from torchvision.models.segmentation import deeplabv3_resnet50
 
 if not os.getcwd() in sys.path:
@@ -20,6 +21,14 @@ from data import build_val_loader, build_train_loader, build_inference_loader
 from segmentation_pytorch.utils.losses import PixelCELoss
 from segmentation_pytorch.utils.metrics import MIoUMetric, MPAMetric
 from segmentation_pytorch.models import create_model
+import random
+import string
+
+
+def random_string(stringLength=4):
+	"""Generate a random string of fixed length """
+	letters = string.ascii_lowercase
+	return ''.join(random.choice(letters) for i in range(stringLength))
 
 
 def main(args):
@@ -93,6 +102,18 @@ def main(args):
 
 	max_miou = 0.
 	num_epochs = args.get('epochs', 200)
+	# load checkpoint
+	pretrained_path = args.model.get('pretrained', None)
+	if pretrained_path:
+		model.load_state_dict(torch.load(pretrained_path))
+		print('Path to the checkpoint of pretrained:', pretrained_path)
+		if args.model.get('load_optim', True):
+			path_to_optimizer = pretrained_path.replace('model', 'optimizer')
+			print('Path to the checkpoint of optimizer:', path_to_optimizer)
+			optimizer.load_state_dict(torch.load(path_to_optimizer))
+		else:
+			warnings.warn('ignoring optimizer, set "load_optim: True" to load')
+	# load finish
 	scheduler_cosine = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_epochs)
 	scheduler_warmup = GradualWarmupScheduler(optimizer, total_epoch=args.train.get('warm_up', 10),
 	                                          multiplier=args.train.get('warm_up_multiplier', 8),
@@ -104,8 +125,10 @@ def main(args):
 	                                       'NA_T4R_122117_19.tif', ])
 	test_loader = {}
 	model_log = {}
+	save_prefix = random_string(4)
 	if not os.path.isdir(args.save_path):
 		os.makedirs(args.save_path)
+	print(f'save prefix: {save_prefix}')
 	for test_slide in test_slides:
 		# print(f'inference {test_slide}')
 		args.data.slide_name = test_slide
@@ -120,11 +143,18 @@ def main(args):
 		model_log[i] = {'miou': f'{valid_logs["miou"].mean():.4}', 'mpa': f'{valid_logs["mpa"].mean(): .4}'}
 		if max_miou < float(model_log[i]['miou']):
 			max_miou = float(model_log[i]['miou'])  # mean
-		torch.save(model.state_dict(), os.path.join(args.save_path, f'{i}_{valid_logs["miou"]:.4}.pth'))
+		torch.save(model.state_dict(), os.path.join(args.save_path, f'{save_prefix}_model_{i}'
+		                                                            f'_{valid_logs["miou"]:.4}.pth'))
+		torch.save(optimizer.state_dict(), os.path.join(args.save_path, f'{save_prefix}_optimizer_{i}'
+		                                                                f'_{valid_logs["miou"]:.4}.pth'))
 		print(f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}')
 		if i > save_model_iter and float(model_log[i - save_model_iter]['miou']) < max_miou:
 			os.remove(
-				os.path.join(args.save_path, f'{i - save_model_iter}_{model_log[i - save_model_iter]["miou"]}.pth'))
+				os.path.join(args.save_path, f'{save_prefix}_model_{i - save_model_iter}'
+				                             f'_{model_log[i - save_model_iter]["miou"]}.pth'))
+			os.remove(
+				os.path.join(args.save_path, f'{save_prefix}_optimizer_{i - save_model_iter}'
+				                             f'_{model_log[i - save_model_iter]["miou"]}.pth'))
 			print(f'delete model: {i - save_model_iter}_{model_log[i - save_model_iter]["miou"]}.pth')
 
 		# ================= update lr ===================== #
@@ -138,6 +168,7 @@ def main(args):
 				print(f'{test_slide}, miou:{test_logs["miou"]}, mpa:{test_logs["mpa"]}')
 				test_log['miou'] = np.append(test_log['miou'], test_logs['miou'])
 				test_log['mpa'] = np.append(test_log['mpa'], test_logs['mpa'])
+	print(f'save prefix: {save_prefix}')
 
 
 if __name__ == '__main__':
