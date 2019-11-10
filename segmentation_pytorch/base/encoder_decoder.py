@@ -1,12 +1,14 @@
 import torch
 import torch.nn as nn
 from .model import Model
+from ..models.CRF import dense_crf
 
 
 class EncoderDecoder(Model):
 
-    def __init__(self, encoder, decoder, activation, multi_stage=False):
+    def __init__(self, encoder, decoder, activation, multi_stage=False, CRF=False):
         super().__init__()
+        self.CRF = CRF
         self.encoder = encoder
         self.decoder = decoder
 

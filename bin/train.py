@@ -114,12 +114,16 @@ def main(args):
 		else:
 			warnings.warn('ignoring optimizer, set "load_optim: True" to load')
 	# load finish
-	scheduler_cosine = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_epochs)
-	scheduler_warmup = GradualWarmupScheduler(optimizer, total_epoch=args.train.get('warm_up', 10),
-	                                          multiplier=args.train.get('warm_up_multiplier', 8),
-	                                          after_scheduler=scheduler_cosine)
-	save_model_iter = args.train.save_iter
 	print(f'training cfg: {args.train}')
+	if args.train.get('warm_up', False):
+		scheduler_cosine = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_epochs)
+		scheduler = GradualWarmupScheduler(optimizer, total_epoch=args.train.get('warm_up', 10),
+		                                   multiplier=args.train.get('warm_up_multiplier', 8),
+		                                   after_scheduler=scheduler_cosine)
+	else:
+		scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, gamma=args.train.lr_gamma,
+		                                                 milestones=args.train.lr_iters)
+	save_model_iter = args.train.save_iter
 
 	test_slides = args.get('test_slides', ['S1_Helios_1of3_v1270.tiff', 'NA_T4_122117_01.tif',
 	                                       'NA_T4R_122117_19.tif', ])
@@ -158,7 +162,7 @@ def main(args):
 			print(f'delete model: {i - save_model_iter}_{model_log[i - save_model_iter]["miou"]}.pth')
 
 		# ================= update lr ===================== #
-		scheduler_warmup.step(i)
+		scheduler.step(i)
 		# ================= test on testset ===================== #
 		if i % 10 == 9 or i == num_epochs - 1:
 			print(f'epoch :{num_epochs}, testing on 3 slides')

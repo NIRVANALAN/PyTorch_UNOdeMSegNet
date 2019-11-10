@@ -3,6 +3,7 @@ import torch
 import pdb
 from tqdm import tqdm as tqdm
 from torchnet.meter import AverageValueMeter
+from ..models.CRF import dense_crf
 
 
 class Epoch:
@@ -74,7 +75,7 @@ class Epoch:
 
 class TrainEpoch(Epoch):
 
-	def __init__(self, model, loss, metrics, optimizer, device='cpu', verbose=True):
+	def __init__(self, model, loss, metrics, optimizer, device='cpu', verbose=True, crf=False):
 		super().__init__(
 			model=model,
 			loss=loss,
@@ -83,6 +84,7 @@ class TrainEpoch(Epoch):
 			device=device,
 			verbose=verbose,
 		)
+		self.crf = crf
 		self.optimizer = optimizer
 
 	def on_epoch_start(self):
@@ -91,6 +93,8 @@ class TrainEpoch(Epoch):
 	def batch_update(self, x, y):
 		self.optimizer.zero_grad()
 		prediction = self.model.forward(x)
+		if self.crf:
+			prediction = dense_crf(img=prediction, output_probs=y)
 		loss = self.loss(prediction, y)
 		loss.backward()
 		self.optimizer.step()
