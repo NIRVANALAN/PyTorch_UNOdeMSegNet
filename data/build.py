@@ -52,6 +52,9 @@ def build_val_loader(args):
 		transforms.ToTensor(),
 		normalize,
 	])
+	dsr_list = args.model.get('dsr_list', None)
+	if dsr_list is not None:
+		dsr_list = [min(dsr_list)]
 	val_dataset = MicroscopyDataset(
 		args.data.root,
 		args.data.test_list,
@@ -59,7 +62,8 @@ def build_val_loader(args):
 		args.data.test_img_size,
 		transform=val_transform,
 		h_flip=False,
-		v_flip=False)
+		v_flip=False,
+		dsr_list=dsr_list)
 	sampler_rate = args.data.get('valid_sampler_rate', 0.5)
 	print(f'val_dataset random_sampler_rate: {sampler_rate}')
 	Microscopy_random_sampler = SubsetRandomSampler(list(range(0, len(val_dataset), int(1 / sampler_rate))))
