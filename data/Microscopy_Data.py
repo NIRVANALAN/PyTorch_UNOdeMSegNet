@@ -160,9 +160,11 @@ class MicroscopyDataset(Dataset):
 			normalize_color=False,
 			shuffle_list=True,
 			scale_factor=None,
-			multi_stage=False):
+			dsr_list=None,
+			num_res=False):
+		self.dsr_list = dsr_list
 		self.scale_factor = scale_factor
-		self.num_res = multi_stage
+		self.num_res = num_res
 		self.transform = transform
 		self.root = root
 		self.is_flip = h_flip or v_flip  # TODO: fix args
@@ -219,22 +221,16 @@ class MicroscopyDataset(Dataset):
 			# add channel dim
 			img = img.unsqueeze(0)
 		# multi resolution label
+		if self.dsr_list:
+			imgs = [img]
+			for dsr in self.dsr_list:
+				imgs.append(cv2.resize(img, (self.img_size/dsr, self.img_size/dsr)))
+			img = imgs
 		if self.num_res:
 			# masks = [mask]
 			masks = []
 			for res in range(0, self.num_res):
 				dsr = pow(self.scale_factor, res)
-				# mask_size = int(self.img_size / dsr)
-				# # img = cv2.resize(
-				# # 	img, (self.img_size, self.img_size), cv2.INTER_NEAREST)
-				# # mask = cv2.resize(
-				# coarse_mask = torch.empty((len(category) + 1, mask_size, mask_size))
-				# for i in range(mask_size):
-				# 	for j in range(mask_size):
-				# 		for k in range(len(category)):
-				# 			coarse_mask[k, i, j] = torch.tensor(
-				# 				np.sum(mask[i * dsr:i * dsr + dsr, j * dsr:j * dsr + dsr] == k))
-				# coarse_mask /= dsr ** 2
 				coarse_mask = downsample_label(alllabel2onehot(mask), dsr)
 				masks.append(coarse_mask)
 			masks.reverse()

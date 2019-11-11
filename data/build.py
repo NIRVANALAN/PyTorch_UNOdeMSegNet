@@ -28,7 +28,8 @@ def build_train_loader(args):
 			False),
 		v_flip=args.data.v_flip,
 		h_flip=args.data.h_flip,
-		multi_stage=args.model.get('num_res', None),
+		dsr_list=args.model.get('dsr_list', None),
+		num_res=args.model.get('num_res', None),
 		scale_factor=args.model.get('scale_factor', 2))
 	if args.data.wavelet:
 		train_dataset = WaveletDataAugmemt(train_dataset, 'db1', 3)

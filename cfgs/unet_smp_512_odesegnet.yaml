@@ -15,6 +15,7 @@ data:
 model:
   arch: unet_ode
   num_classes: 8 # with BG as a class
+  dsr_list: [64, 32, 16]
   dim_in: 1
   dim_latent : 32
   num_res: 2
