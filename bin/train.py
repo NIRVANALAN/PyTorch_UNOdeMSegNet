@@ -164,6 +164,7 @@ def main(args):
 		# ================= update lr ===================== #
 		scheduler.step(i)
 		# ================= test on testset ===================== #
+		"""
 		if i % 10 == 9 or i == num_epochs - 1:
 			print(f'epoch :{num_epochs}, testing on 3 slides')
 			test_log = {'miou': np.array([]), 'mpa': np.array([])}
@@ -172,6 +173,7 @@ def main(args):
 				print(f'{test_slide}, miou:{test_logs["miou"]}, mpa:{test_logs["mpa"]}')
 				test_log['miou'] = np.append(test_log['miou'], test_logs['miou'])
 				test_log['mpa'] = np.append(test_log['mpa'], test_logs['mpa'])
+		"""
 	print(f'save prefix: {save_prefix}')
 
 
