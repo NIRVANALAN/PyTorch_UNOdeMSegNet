@@ -213,7 +213,8 @@ class MicroscopyDataset(Dataset):
         # multi resolution label
         if self.dsr_list:
             min_dsr = int(np.min(self.dsr_list))
-            img = cv2.resize(img, (int(self.img_size/min_dsr), int(self.img_size/min_dsr)))
+            img = cv2.resize(img, (int(self.img_size/min_dsr),
+                                   int(self.img_size/min_dsr)))
             masks = []
             for dsr in self.dsr_list:
                 coarse_mask = downsample_label(alllabel2onehot(mask), dsr)
@@ -226,7 +227,7 @@ class MicroscopyDataset(Dataset):
             # masks = [mask]
             masks = []
             for res in range(0, self.num_res):
-                dsr = pow(self.scale_factor, res)
+                dsr = pow(self.ncale_factor, res)
                 coarse_mask = downsample_label(alllabel2onehot(mask), dsr)
                 masks.append(coarse_mask)
             masks.reverse()
@@ -258,15 +259,22 @@ class MicroscopyDataset(Dataset):
 
 class TiffDataset(Dataset):
     def __init__(self, root, slide_name, patch_size,
-                 transform=None, target_transform=None, evaluate=False, overlap_size=480):
+                 transform=None, target_transform=None, evaluate=False, overlap_size=480,
+                 scale_factor=None,
+                 dsr_list=None,
+                 num_res=False):
         self.transform = transform
         self.eval = evaluate
+        self.dsr_list = dsr_list
+        self.scale_factor = scale_factor
+        self.num_res = num_res
         self.root = root
         self.patch_size = patch_size
         self.transform = transform
         self.target_transform = target_transform
         self.img_array = (tiff.imread(os.path.join(root, 'raw', slide_name)))
-        self.label_array = (np.load(os.path.join(root, 'labels', slide_name.split('.')[0] + '.npy')))
+        self.label_array = (np.load(os.path.join(
+            root, 'labels', slide_name.split('.')[0] + '.npy')))
         if self.img_array.dtype != 'uint16':
             self.img_array = np.uint16(self.img_array)
         self.slide_img = Image.fromarray(self.img_array)
@@ -281,12 +289,13 @@ class TiffDataset(Dataset):
             for y in range(self.w):
                 # print(x, y)
                 self.images.append(self.slide_img[:,
-                                   x * patch_size:(x + 1) * patch_size,
-                                   y * patch_size:(y + 1) * patch_size])
+                                                  x * patch_size:(x + 1) * patch_size,
+                                                  y * patch_size:(y + 1) * patch_size])
                 self.labels.append(self.label_array[
                                    x * patch_size:(x + 1) * patch_size,
                                    y * patch_size:(y + 1) * patch_size])
-        print(f'build slide_dataset: {slide_name} done. images: {len(self.images)}')
+        print(
+            f'build slide_dataset: {slide_name} done. images: {len(self.images)}')
 
     def __len__(self):
         return len(self.images)
@@ -299,6 +308,28 @@ class TiffDataset(Dataset):
         y = index % self.w
         img = self.images[index]
         label = self.labels[index]
+        # multi resolution label
+        if self.dsr_list:
+            min_dsr = int(np.min(self.dsr_list))
+            img = cv2.resize(img, (int(self.patch_size/min_dsr),
+                                   int(self.patch_size/min_dsr)))
+            masks = []
+            for dsr in self.dsr_list:
+                coarse_mask = downsample_label(alllabel2onehot(label), dsr)
+                masks.append(coarse_mask)
+            if len(self.dsr_list) == 1:
+                mask = mask[..., ::dsr, ::dsr]
+            else:
+                label = masks
+        elif self.num_res:
+            # masks = [mask]
+            masks = []
+            for res in range(0, self.num_res):
+                dsr = pow(self.scale_factor, res)
+                coarse_mask = downsample_label(alllabel2onehot(mask), dsr)
+                masks.append(coarse_mask)
+            masks.reverse()
+            label = masks
         if self.eval:
             return [img, label]
         else:
