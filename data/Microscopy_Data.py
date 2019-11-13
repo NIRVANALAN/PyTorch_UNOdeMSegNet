@@ -318,7 +318,7 @@ class TiffDataset(Dataset):
                 coarse_mask = downsample_label(alllabel2onehot(label), dsr)
                 masks.append(coarse_mask)
             if len(self.dsr_list) == 1:
-                mask = mask[..., ::dsr, ::dsr]
+                label = label[..., ::dsr, ::dsr]
             else:
                 label = masks
         elif self.num_res:
@@ -326,7 +326,7 @@ class TiffDataset(Dataset):
             masks = []
             for res in range(0, self.num_res):
                 dsr = pow(self.scale_factor, res)
-                coarse_mask = downsample_label(alllabel2onehot(mask), dsr)
+                coarse_mask = downsample_label(alllabel2onehot(label), dsr)
                 masks.append(coarse_mask)
             masks.reverse()
             label = masks
