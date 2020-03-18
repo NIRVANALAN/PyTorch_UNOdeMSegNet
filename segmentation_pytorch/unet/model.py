@@ -3,7 +3,7 @@ from ..base import EncoderDecoder
 from ..encoders import get_encoder
 
 
-class Unet(EncoderDecoder):
+class ResUNet(EncoderDecoder):
     """Unet_ is a fully convolution neural network for image semantic segmentation
 
     Args:

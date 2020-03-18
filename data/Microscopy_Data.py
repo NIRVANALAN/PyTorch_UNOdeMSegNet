@@ -185,7 +185,7 @@ class MicroscopyDataset(Dataset):
 
     def __getitem__(self, index):
         # get metadata
-        path, segment_label_path, cell_type = self.images[index]
+        path, label, cell_type = self.images[index]
 
         # load image
         if 'tif' in osp.splitext(path)[-1].lower():
@@ -196,7 +196,7 @@ class MicroscopyDataset(Dataset):
             img = np.load(os.path.join(self.root, path))
 
         # load mask
-        mask = np.load(osp.join(self.root, segment_label_path))
+        mask = np.load(osp.join(self.root, label))
 
         assert img.shape[0] == self.img_size
         # scale image to fixed size

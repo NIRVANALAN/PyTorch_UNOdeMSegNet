@@ -4,7 +4,7 @@ import torch.nn as nn
 import segmentation_pytorch as smp
 
 
-class WaveletModel(smp.Unet):
+class WaveletModel(smp.UNet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.extra_conv = nn.Conv2d(13, 3, kernel_size=1, stride=1)

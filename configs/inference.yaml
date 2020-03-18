@@ -14,7 +14,9 @@ data:
   wavelet: False
   num_classes: 8
 model:
-  arch: unet_ode
+  # arch: unet_ode
+  arch: unetplus
+  encoder: None
   dim_in: 1
   dim_latent : 32
   num_res: 4
@@ -26,7 +28,8 @@ save_root: inference/
 #best_model: checkpoints/microscopy/64_se50_bc32_0.5/0.2900565167268117.pth
 #best_model: checkpoints/microscopy/128/ts0.5_ex0.2_bg0.1/0.5162187433905072.pth
 #best_model: checkpoints/microscopy/512/ratio0.5/0.2811503775160889.pth
-best_model: checkpoints/14_0.4418.pth
+# best_model: checkpoints/14_0.4418.pth
+best_model: checkpoints/microscopy/512/ratio1/obww_model_161_0.146.pth
 #best_model: checkpoints/microscopy/256/ratio0.5/0.22244014971110282.pth
 #best_model: checkpoints/microscopy/128/ts0.3_ex0.1_bg0.3_nocw_wavelet/0.3142457024327346.pth
 #best_model: checkpoints/microscopy/512/ts0.05_ex0.01_bg0.3/0.3684685038668769.pth

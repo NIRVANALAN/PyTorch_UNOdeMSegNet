@@ -126,3 +126,4 @@ out/
 data/
 inference
 checkpoints/
+.vscode

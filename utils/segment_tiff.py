@@ -20,7 +20,7 @@ raws = ['S1', 'T4', 'T4R']
 
 # extracted_root = '/work/06633/ylan/maverick2/data/dataset/raw/extracted_data'
 # extracted_root = '/mnt/lustre/lanyushi/repos/ut/extracted_data'
-extracted_root = '/mnt/lustre/lanyushi/repos/ut/extracted_data'
+extracted_root = '/mnt/yushi/repo/UT/extracted_data'
 raw_dir = osp.join(extracted_root, 'raw')
 label_dir = osp.join(extracted_root, 'labels')
 
@@ -300,18 +300,19 @@ def generate_list(dataset_root, val_slide='NA_T4_122117_01'):
 
 
 # patch_size = 1024
-save_root = os.path.join('/mnt/lustre/lanyushi/repos/ut/dataset')
+# save_root = os.path.join('/mnt/lustre/lanyushi/repos/ut/dataset')
+save_root = os.path.join('/mnt/yushi/repo/UT/dataset')
 #
-for ps in [256]:
-    # # 	# for ps in [64, 96, 128]:
-    # # 	# for ratio in [1]:
-    for ratio in [1.0]:
-        sliding_window_crop(save_dir=save_root,
-                            patch_size=ps, slide_patch_ratio=ratio, random_patch=True, patch_number=100, drop_bg_th=0.5)
-# generate_list(save_root)
+# for ps in [256]:
+#     # # 	# for ps in [64, 96, 128]:
+#     # # 	# for ratio in [1]:
+#     for ratio in [1.0]:
+#         sliding_window_crop(save_dir=save_root,
+#                             patch_size=ps, slide_patch_ratio=ratio, random_patch=True, patch_number=1000, drop_bg_th=0.2)
+generate_list(save_root)
 
 # generate_all_mask(save_root)
-generate_raw_data(tile_save_root=save_root, patch_size=1024)
+# generate_raw_data(tile_save_root=save_root, patch_size=1024)
 # generate_mask(tile_data_dir=save_root, mask_size=1024)
 
 # for i in category:
