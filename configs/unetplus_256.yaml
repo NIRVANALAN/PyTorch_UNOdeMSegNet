@@ -1,5 +1,6 @@
 data:
   root: /mnt/yushi/repo/UT/dataset
+  tiffroot: /mnt/yushi/repo/UT/extracted_data
   train_list: /mnt/yushi/repo/UT/dataset/256/ratio1.0/train_list.txt
   test_list:  /mnt/yushi/repo/UT/dataset/256/ratio1.0/test_list.txt
   train_img_size: 256
@@ -19,7 +20,7 @@ model:
   ignore: ['fc.weight', 'fc.bias']
 train:
   lr: 0.01
-  lr_iters: [40, 80, 120, 160, 200]
+  lr_iters: [30, 60, 90, 120, 160]
 #  warm_up: 10
   lr_gamma: 0.5
   momentum: 0.99
@@ -35,4 +36,4 @@ loss:
   cls_loss: CE
 epochs: 200
 single_channel_target: False
-save_path: checkpoints/microscopy/256/randomcrop
+save_path: checkpoints/microscopy/256/slidewindow

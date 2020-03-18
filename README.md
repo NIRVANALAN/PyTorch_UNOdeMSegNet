@@ -10,3 +10,9 @@ This repository contains simple PyTorch implementations of UNOdeMSegNet and UNet
 - [Fully Convolutional Networks for Semantic Segmentation](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf)
 - [Encoder-Decoder with Atrous Separable Convolution for Semantic Image Segmentation](https://arxiv.org/pdf/1802.02611.pdf)
 
+
+## TODO
+- dataset
+- BCEDiceLoss
+- check miou calculation, remove background?
+- multi-layer ODEUNET, with deep supervision
