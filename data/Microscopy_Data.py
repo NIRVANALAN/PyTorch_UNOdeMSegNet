@@ -155,13 +155,14 @@ class MicroscopyDataset(Dataset):
             crop_size=-1,
             h_flip=False,
             v_flip=False,
-            single_channel_target=False,
+            bceloss=False,
             include_bg=True,
             normalize_color=False,
             shuffle_list=True,
             scale_factor=None,
             dsr_list=None,
-            num_res=False):
+            num_res=False,
+            n_classes=8):
         self.dsr_list = dsr_list
         self.scale_factor = scale_factor
         self.num_res = num_res
@@ -174,8 +175,9 @@ class MicroscopyDataset(Dataset):
         self.crop_size = crop_size
         self.target_transform = target_transform
         self.images = read_object_labels(train_list, shuffle=shuffle_list)
-        self.single_channel_target = single_channel_target
+        self.bceloss = bceloss
         self.normalize_color = normalize_color
+        self.n_classes = n_classes
 
     def __len__(self):
         return len(self.images)
@@ -245,6 +247,13 @@ class MicroscopyDataset(Dataset):
             # add channel dim
             img = img.unsqueeze(0)
 
+        if self.bceloss:
+            # * transfer mask foramt to N*C*H*W
+            label_mask = np.zeros(
+                (self.n_classes, mask.shape[0], mask.shape[1]), dtype=np.float)
+            for ii in range(0, self.n_classes):
+                label_mask[ii][np.where(mask == ii)[:2]] = 1
+            mask = label_mask
         # load multi-stage label
         # if self.num_res:
         #   masks = [mask]

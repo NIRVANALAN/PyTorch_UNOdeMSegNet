@@ -275,9 +275,6 @@ def generate_list(dataset_root, val_slide='NA_T4_122117_01'):
                     for img in imgs]
                 with open(os.path.join(threshold_dir, slide, 'data_list.txt'), 'w') as filehandle:
                     filehandle.writelines(slide_img)
-                # if slide == val_slide:
-                #   test_list.extend(slide_img)
-                # else:
                 data_list[raws.index(cell_type)].append(slide_img)
             # cross val later
             # pdb.set_trace()
@@ -299,19 +296,18 @@ def generate_list(dataset_root, val_slide='NA_T4_122117_01'):
             with open(os.path.join(threshold_dir, f'test_list.txt'), 'w') as filehandle:
                 filehandle.writelines(test_list)
                 print(f'test_list len: {test_list.__len__()}')
-    pass
 
 
 # patch_size = 1024
 # save_root = os.path.join('/mnt/lustre/lanyushi/repos/ut/dataset')
 save_root = os.path.join('/mnt/yushi/repo/UT/dataset')
 #
-for ps in [256]:
-    #     # # 	# for ps in [64, 96, 128]:
-    #     # # 	# for ratio in [1]:
-    for ratio in [1.0]:
-        sliding_window_crop(save_dir=save_root,
-                            patch_size=ps, slide_patch_ratio=ratio, random_patch=True, patch_number=1000, drop_bg_th=0.2)
+# for ps in [512]:
+#     #     # # 	# for ps in [64, 96, 128]:
+#     #     # # 	# for ratio in [1]:
+#     for ratio in [1.0]:
+#         sliding_window_crop(save_dir=save_root,
+#                             patch_size=ps, slide_patch_ratio=ratio, random_patch=False, patch_number=1000, drop_bg_th=0.2)
 generate_list(save_root)
 
 # generate_all_mask(save_root)

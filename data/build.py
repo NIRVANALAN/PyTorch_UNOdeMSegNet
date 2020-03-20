@@ -23,9 +23,7 @@ def build_train_loader(args):
         args.data.train_img_size,
         output_size=args.data.test_img_size,
         transform=train_transform,
-        single_channel_target=args.get(
-            'single_channel_target',
-            False),
+        bceloss='bce' in args.loss.cls_loss,
         v_flip=args.data.v_flip,
         h_flip=args.data.h_flip,
         dsr_list=args.model.get('dsr_list', None),
@@ -34,15 +32,16 @@ def build_train_loader(args):
     if args.data.wavelet:
         train_dataset = WaveletDataAugmemt(train_dataset, 'db1', 3)
     train_batch_size = args.data.train_batch_size
-    sampler_rate = args.data.get('train_sampler_rate', 0.5)
-    print(f'random_sampler_rate: {sampler_rate}')
-    Microscopy_random_sampler = SubsetRandomSampler(
-        list(range(0, len(train_dataset), int(1 / sampler_rate))))
+    # sampler_rate = args.data.get('train_sampler_rate', 0.5)
+    # print(f'random_sampler_rate: {sampler_rate}')
+    # Microscopy_random_sampler = SubsetRandomSampler(
+    #     list(range(0, len(train_dataset), int(1 / sampler_rate))))
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset,
         batch_size=train_batch_size,
         num_workers=args.data.workers,
-        sampler=Microscopy_random_sampler)
+        shuffle=True)
+    # sampler=Microscopy_random_sampler)
     return train_loader, train_dataset
 
 
@@ -63,12 +62,13 @@ def build_val_loader(args):
         args.data.test_img_size,
         transform=val_transform,
         h_flip=False,
+        bceloss='bce' in args.loss.cls_loss,
         v_flip=False,
         dsr_list=dsr_list)
-    sampler_rate = args.data.get('valid_sampler_rate', 0.5)
-    print(f'val_dataset random_sampler_rate: {sampler_rate}')
-    Microscopy_random_sampler = SubsetRandomSampler(
-        list(range(0, len(val_dataset), int(1 / sampler_rate))))
+    # sampler_rate = args.data.get('valid_sampler_rate', 0.5)
+    # print(f'val_dataset random_sampler_rate: {sampler_rate}')
+    # Microscopy_random_sampler = SubsetRandomSampler(
+    #     list(range(0, len(val_dataset), int(1 / sampler_rate))))
     if args.data.wavelet:
         val_dataset = WaveletDataAugmemt(val_dataset, 'db1', 3)
     test_batch_size = args.data.test_batch_size
@@ -76,7 +76,8 @@ def build_val_loader(args):
         val_dataset,
         batch_size=test_batch_size,
         num_workers=args.data.workers,
-        sampler=Microscopy_random_sampler)
+        shuffle=True)
+    # sampler=Microscopy_random_sampler)
     return val_loader, val_dataset
 
 

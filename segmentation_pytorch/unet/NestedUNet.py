@@ -9,10 +9,10 @@ import torchvision
 
 
 class VGGBlock(nn.Module):
-    def __init__(self, in_channels, middle_channels, out_channels, act_func=nn.ReLU(inplace=True)):
+    def __init__(self, dim_in, middle_channels, out_channels, act_func=nn.ReLU(inplace=True)):
         super(VGGBlock, self).__init__()
         self.act_func = act_func
-        self.conv1 = nn.Conv2d(in_channels, middle_channels, 3, padding=1)
+        self.conv1 = nn.Conv2d(dim_in, middle_channels, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(middle_channels)
         self.conv2 = nn.Conv2d(middle_channels, out_channels, 3, padding=1)
         self.bn2 = nn.BatchNorm2d(out_channels)
@@ -30,7 +30,7 @@ class VGGBlock(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, args):
+    def __init__(self, dim_in=1, n_classes=8, **args):
         super().__init__()
 
         self.args = args
@@ -38,21 +38,26 @@ class UNet(nn.Module):
         nb_filter = [32, 64, 128, 256, 512]
 
         self.pool = nn.MaxPool2d(2, 2)
-        self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up = nn.Upsample(
+            scale_factor=2, mode='bilinear', align_corners=True)
 
-        self.conv0_0 = VGGBlock(args.input_channels, nb_filter[0], nb_filter[0])
+        self.conv0_0 = VGGBlock(dim_in,
+                                nb_filter[0], nb_filter[0])
         self.conv1_0 = VGGBlock(nb_filter[0], nb_filter[1], nb_filter[1])
         self.conv2_0 = VGGBlock(nb_filter[1], nb_filter[2], nb_filter[2])
         self.conv3_0 = VGGBlock(nb_filter[2], nb_filter[3], nb_filter[3])
         self.conv4_0 = VGGBlock(nb_filter[3], nb_filter[4], nb_filter[4])
 
-        self.conv3_1 = VGGBlock(nb_filter[3]+nb_filter[4], nb_filter[3], nb_filter[3])
-        self.conv2_2 = VGGBlock(nb_filter[2]+nb_filter[3], nb_filter[2], nb_filter[2])
-        self.conv1_3 = VGGBlock(nb_filter[1]+nb_filter[2], nb_filter[1], nb_filter[1])
-        self.conv0_4 = VGGBlock(nb_filter[0]+nb_filter[1], nb_filter[0], nb_filter[0])
+        self.conv3_1 = VGGBlock(
+            nb_filter[3]+nb_filter[4], nb_filter[3], nb_filter[3])
+        self.conv2_2 = VGGBlock(
+            nb_filter[2]+nb_filter[3], nb_filter[2], nb_filter[2])
+        self.conv1_3 = VGGBlock(
+            nb_filter[1]+nb_filter[2], nb_filter[1], nb_filter[1])
+        self.conv0_4 = VGGBlock(
+            nb_filter[0]+nb_filter[1], nb_filter[0], nb_filter[0])
 
-        self.final = nn.Conv2d(nb_filter[0], 1, kernel_size=1)
-
+        self.final = nn.Conv2d(nb_filter[0], n_classes, kernel_size=1)
 
     def forward(self, input):
         x0_0 = self.conv0_0(input)
@@ -79,27 +84,39 @@ class NestedUNet(nn.Module):
         nb_filter = [32, 64, 128, 256, 512]
 
         self.pool = nn.MaxPool2d(2, 2)
-        self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up = nn.Upsample(
+            scale_factor=2, mode='bilinear', align_corners=True)
 
-        self.conv0_0 = VGGBlock(args.input_channels, nb_filter[0], nb_filter[0])
+        self.conv0_0 = VGGBlock(args.input_channels,
+                                nb_filter[0], nb_filter[0])
         self.conv1_0 = VGGBlock(nb_filter[0], nb_filter[1], nb_filter[1])
         self.conv2_0 = VGGBlock(nb_filter[1], nb_filter[2], nb_filter[2])
         self.conv3_0 = VGGBlock(nb_filter[2], nb_filter[3], nb_filter[3])
         self.conv4_0 = VGGBlock(nb_filter[3], nb_filter[4], nb_filter[4])
 
-        self.conv0_1 = VGGBlock(nb_filter[0]+nb_filter[1], nb_filter[0], nb_filter[0])
-        self.conv1_1 = VGGBlock(nb_filter[1]+nb_filter[2], nb_filter[1], nb_filter[1])
-        self.conv2_1 = VGGBlock(nb_filter[2]+nb_filter[3], nb_filter[2], nb_filter[2])
-        self.conv3_1 = VGGBlock(nb_filter[3]+nb_filter[4], nb_filter[3], nb_filter[3])
+        self.conv0_1 = VGGBlock(
+            nb_filter[0]+nb_filter[1], nb_filter[0], nb_filter[0])
+        self.conv1_1 = VGGBlock(
+            nb_filter[1]+nb_filter[2], nb_filter[1], nb_filter[1])
+        self.conv2_1 = VGGBlock(
+            nb_filter[2]+nb_filter[3], nb_filter[2], nb_filter[2])
+        self.conv3_1 = VGGBlock(
+            nb_filter[3]+nb_filter[4], nb_filter[3], nb_filter[3])
 
-        self.conv0_2 = VGGBlock(nb_filter[0]*2+nb_filter[1], nb_filter[0], nb_filter[0])
-        self.conv1_2 = VGGBlock(nb_filter[1]*2+nb_filter[2], nb_filter[1], nb_filter[1])
-        self.conv2_2 = VGGBlock(nb_filter[2]*2+nb_filter[3], nb_filter[2], nb_filter[2])
+        self.conv0_2 = VGGBlock(
+            nb_filter[0]*2+nb_filter[1], nb_filter[0], nb_filter[0])
+        self.conv1_2 = VGGBlock(
+            nb_filter[1]*2+nb_filter[2], nb_filter[1], nb_filter[1])
+        self.conv2_2 = VGGBlock(
+            nb_filter[2]*2+nb_filter[3], nb_filter[2], nb_filter[2])
 
-        self.conv0_3 = VGGBlock(nb_filter[0]*3+nb_filter[1], nb_filter[0], nb_filter[0])
-        self.conv1_3 = VGGBlock(nb_filter[1]*3+nb_filter[2], nb_filter[1], nb_filter[1])
+        self.conv0_3 = VGGBlock(
+            nb_filter[0]*3+nb_filter[1], nb_filter[0], nb_filter[0])
+        self.conv1_3 = VGGBlock(
+            nb_filter[1]*3+nb_filter[2], nb_filter[1], nb_filter[1])
 
-        self.conv0_4 = VGGBlock(nb_filter[0]*4+nb_filter[1], nb_filter[0], nb_filter[0])
+        self.conv0_4 = VGGBlock(
+            nb_filter[0]*4+nb_filter[1], nb_filter[0], nb_filter[0])
 
         if self.args.deepsupervision:
             self.final1 = nn.Conv2d(nb_filter[0], 1, kernel_size=1)
@@ -108,7 +125,6 @@ class NestedUNet(nn.Module):
             self.final4 = nn.Conv2d(nb_filter[0], 1, kernel_size=1)
         else:
             self.final = nn.Conv2d(nb_filter[0], 1, kernel_size=1)
-
 
     def forward(self, input):
         x0_0 = self.conv0_0(input)
@@ -128,15 +144,17 @@ class NestedUNet(nn.Module):
         x3_1 = self.conv3_1(torch.cat([x3_0, self.up(x4_0)], 1))
         x2_2 = self.conv2_2(torch.cat([x2_0, x2_1, self.up(x3_1)], 1))
         x1_3 = self.conv1_3(torch.cat([x1_0, x1_1, x1_2, self.up(x2_2)], 1))
-        x0_4 = self.conv0_4(torch.cat([x0_0, x0_1, x0_2, x0_3, self.up(x1_3)], 1))
+        x0_4 = self.conv0_4(
+            torch.cat([x0_0, x0_1, x0_2, x0_3, self.up(x1_3)], 1))
 
         if self.args.deepsupervision:
             output1 = self.final1(x0_1)
             output2 = self.final2(x0_2)
             output3 = self.final3(x0_3)
             output4 = self.final4(x0_4)
-            return [output1, output2, output3, output4]
+            # return [output1, output2, output3, output4]
+            output = (final_1+final_2+final_3+final_4)/4
 
         else:
             output = self.final(x0_4)
-            return output
+        return output

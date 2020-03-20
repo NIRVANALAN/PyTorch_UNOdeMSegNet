@@ -265,23 +265,30 @@ class MulticlassBCEDiceLoss(nn.Module):
     requires input.shape[0:1] and target.shape[0:1] to be (N, C) where N is
       batch size and C is number of classes
     """
+    __name__ = 'multi_class_bcediceloss'
 
-    def __init__(self):
+    def __init__(self, n_classes=8, weights=None):
         super(MulticlassBCEDiceLoss, self).__init__()
+        self.weights = weights
+        self.n_classes = n_classes
+        if weights is None:
+            # uniform weights for all classes
+            self.weights = torch.ones(n_classes)
+        else:
+            assert len(weights) == n_classes
+            self.weights = weights
 
-    def forward(self, input, target, weights=None):
+    def forward(self, input, target, trainig=True):
 
-        C = target.shape[1]
-
-        # if weights is None:
-        # 	weights = torch.ones(C) #uniform weights for all classes
+        # C = target.shape[1]
+        assert target.shape[1] == self.n_classes
 
         bcedice = BCEDiceLoss()
         totalLoss = 0
-        for i in range(C):
+        for i in range(self.n_classes):
             bcediceloss = bcedice(input[:, i], target[:, i])
-            if weights is not None:
-                bcediceloss *= weights[i]
+            # if weights is not None:
+            bcediceloss *= self.weights[i]
             totalLoss += bcediceloss
 
         return totalLoss

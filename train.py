@@ -1,8 +1,8 @@
 import string
 import random
 from segmentation_pytorch.models import create_model
-from segmentation_pytorch.utils.metrics import MIoUMetric, MPAMetric
-from segmentation_pytorch.utils.losses import PixelCELoss
+from segmentation_pytorch.utils.metrics import FWAVACCMetric, MPAMetric
+from segmentation_pytorch.utils.losses import PixelCELoss, MulticlassBCEDiceLoss
 from data import build_val_loader, build_train_loader, build_inference_loader
 from easydict import EasyDict
 import argparse
@@ -58,13 +58,17 @@ def main(args):
                 print(f'Error cannot open class weight file, {e}, exiting')
                 exit(-1)
 
-    criterion = PixelCELoss(
-        num_classes=num_classes,
-        weight=class_weight, multi_stage=num_res)
+    if args.loss.cls_loss == 'bcediceloss':
+        criterion = MulticlassBCEDiceLoss(
+            n_classes=num_classes, weights=class_weight)
+    else:
+        criterion = PixelCELoss(
+            num_classes=num_classes,
+            weight=class_weight, multi_stage=num_res)
     metrics = [  # TODO, check IOU calculation, should ignore some classes?
-        MIoUMetric(num_classes=num_classes, ignore_index=None),
-        MPAMetric(num_classes=num_classes,
-                  ignore_index=None)  # ignore background
+        FWAVACCMetric(num_classes=num_classes, ignore_index=0),
+        # MPAMetric(num_classes=num_classes,
+        #           ignore_index=0)  # ignore background
     ]
 
     torch.cuda.set_device(args.gpu)
@@ -146,8 +150,8 @@ def main(args):
         train_logs = train_epoch.run(train_loader)
         valid_logs = valid_epoch.run(valid_loader)
         # ================= save model and delete old models ===================== #
-        model_log[i] = {'miou': f'{valid_logs["miou"].mean():.4}',
-                        'mpa': f'{valid_logs["mpa"].mean(): .4}'}
+        model_log[i] = {'miou': f'{valid_logs["miou"].mean():.4}', }
+        # 'mpa': f'{valid_logs["mpa"].mean(): .4}'}
         if max_miou < float(model_log[i]['miou']):
             max_miou = float(model_log[i]['miou'])  # mean
         torch.save(model.state_dict(), os.path.join(args.save_path, f'{save_prefix}_model_{i}'
@@ -155,7 +159,8 @@ def main(args):
         torch.save(optimizer.state_dict(), os.path.join(args.save_path, f'{save_prefix}_optimizer_{i}'
                                                                         f'_{valid_logs["miou"]:.4}.pth'))
         print(
-            f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}, best_miou: {max_miou}')
+            # f'Model saved: MIOU:{valid_logs["miou"]}, MPA:{valid_logs["mpa"]}, best_miou: {max_miou}')
+            f'Model saved: MIOU:{valid_logs["miou"]}, best_miou: {max_miou}')
         if i > save_model_iter and float(model_log[i - save_model_iter]['miou']) < max_miou:
             os.remove(
                 os.path.join(args.save_path, f'{save_prefix}_model_{i - save_model_iter}'

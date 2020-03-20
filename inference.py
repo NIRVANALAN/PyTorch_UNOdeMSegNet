@@ -16,7 +16,7 @@ from easydict import EasyDict
 import webcolors
 from data import build_inference_loader
 from segmentation_pytorch.models import create_model
-from segmentation_pytorch.utils.metrics import MIoUMetric, MPAMetric
+from segmentation_pytorch.utils.metrics import FWAVACCMetric, MPAMetric
 from segmentation_pytorch.utils.losses import PixelCELoss
 from segmentation_pytorch.utils.functions import confusion_matrix
 import segmentation_pytorch as smp
@@ -83,7 +83,7 @@ def inference_all_tiff(args):
     # evaluate slide
     num_classes = args.data.num_classes
     criterion = PixelCELoss(num_classes=num_classes)
-    MIOU = MIoUMetric(num_classes=num_classes, ignore_index=None)
+    MIOU = MFWAVACCMetricIoUMetric(num_classes=num_classes, ignore_index=None)
     MPA = MPAMetric(num_classes=num_classes, ignore_index=None)
     metrics = [
         MIOU, MPA

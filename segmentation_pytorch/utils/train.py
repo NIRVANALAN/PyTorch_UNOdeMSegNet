@@ -8,120 +8,124 @@ from torchnet.meter import AverageValueMeter
 
 class Epoch:
 
-	def __init__(self, model, loss, metrics, stage_name, device='cpu', verbose=True):
-		self.model = model
-		self.loss = loss
-		self.metrics = metrics
-		self.stage_name = stage_name
-		self.verbose = verbose
-		self.device = device
+    def __init__(self, model, loss, metrics, stage_name, device='cpu', verbose=True):
+        self.model = model
+        self.loss = loss
+        self.metrics = metrics
+        self.stage_name = stage_name
+        self.verbose = verbose
+        self.device = device
 
-		self._to_device()
+        self._to_device()
 
-	def _to_device(self):
-		self.model.to(self.device)
-		self.loss.to(self.device)
-		for metric in self.metrics:
-			metric.to(self.device)
+    def _to_device(self):
+        self.model.to(self.device)
+        self.loss.to(self.device)
+        for metric in self.metrics:
+            metric.to(self.device)
 
-	def _format_logs(self, logs):
-		str_logs = ['{} - {:.4}'.format(k, v) for k, v in logs.items()]
-		s = ', '.join(str_logs)
-		return s
+    def _format_logs(self, logs):
+        str_logs = ['{} - {:.4}'.format(k, v) for k, v in logs.items()]
+        s = ', '.join(str_logs)
+        return s
 
-	def batch_update(self, x, y):
-		raise NotImplementedError
+    def batch_update(self, x, y):
+        raise NotImplementedError
 
-	def on_epoch_start(self):
-		pass
+    def on_epoch_start(self):
+        pass
 
-	def run(self, dataloader):
+    def run(self, dataloader):
 
-		self.on_epoch_start()
+        self.on_epoch_start()
 
-		logs = {}
-		loss_meter = AverageValueMeter()
-		metrics_meters = {metric.__name__: AverageValueMeter() for metric in self.metrics}
+        logs = {}
+        loss_meter = AverageValueMeter()
+        metrics_meters = {metric.__name__: AverageValueMeter()
+                          for metric in self.metrics}
 
-		with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
-			for x, y in iterator:
-				# x, y = x.to(self.device), y.to(self.device)
-				x = x.to(self.device)
-				if isinstance(y, list):
-					y = [i.to(self.device) for i in y]
-				else:
-					y = y.to(self.device)
-				loss, y_pred = self.batch_update(x, y)
-				# update loss logs
-				loss_value = loss.cpu().detach().numpy()
-				loss_meter.add(loss_value)
-				loss_logs = {self.loss.__name__: loss_meter.mean}
-				logs.update(loss_logs)
+        with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
+            for x, y in iterator:
+                # x, y = x.to(self.device), y.to(self.device)
+                x = x.to(self.device)
+                if isinstance(y, list):
+                    y = [i.to(self.device) for i in y]
+                else:
+                    y = y.to(self.device)
+                loss, y_pred = self.batch_update(x, y)
+                # update loss logs
+                loss_value = loss.cpu().detach().numpy()
+                loss_meter.add(loss_value)
+                loss_logs = {self.loss.__name__: loss_meter.mean}
+                logs.update(loss_logs)
 
-				# update metrics logs
-				y = y[-1] if isinstance(y, list) else y
-				for metric_fn in self.metrics:
-					metric_value = metric_fn(y_pred, y).cpu().detach().numpy()
-					metrics_meters[metric_fn.__name__].add(metric_value)
-				metrics_logs = {k: v.mean for k, v in metrics_meters.items()}
-				logs.update(metrics_logs)
+                # update metrics logs
+                y = y[-1] if isinstance(y, list) else y
+                for metric_fn in self.metrics:
+                    # metric_value = metric_fn(y_pred, y).cpu().detach().numpy()
+                    metric_value = metric_fn(y_pred, y)
+                    if metric_value != -1:
+                        metrics_meters[metric_fn.__name__].add(
+                            metric_value)
+                metrics_logs = {k: v.mean for k, v in metrics_meters.items()}
+                logs.update(metrics_logs)
 
-				if self.verbose:
-					s = self._format_logs(logs)
-					iterator.set_postfix_str(s)
+                if self.verbose:
+                    s = self._format_logs(logs)
+                    iterator.set_postfix_str(s)
 
-		return logs
+        return logs
 
 
 class TrainEpoch(Epoch):
 
-	def __init__(self, model, loss, metrics, optimizer, device='cpu', verbose=True, crf=False):
-		super().__init__(
-			model=model,
-			loss=loss,
-			metrics=metrics,
-			stage_name='train',
-			device=device,
-			verbose=verbose,
-		)
-		self.crf = crf
-		self.optimizer = optimizer
+    def __init__(self, model, loss, metrics, optimizer, device='cpu', verbose=True, crf=False):
+        super().__init__(
+            model=model,
+            loss=loss,
+            metrics=metrics,
+            stage_name='train',
+            device=device,
+            verbose=verbose,
+        )
+        self.crf = crf
+        self.optimizer = optimizer
 
-	def on_epoch_start(self):
-		self.model.train()
+    def on_epoch_start(self):
+        self.model.train()
 
-	def batch_update(self, x, y):
-		self.optimizer.zero_grad()
-		prediction = self.model.forward(x)
-		if self.crf:
-			prediction = dense_crf(img=prediction, output_probs=y)
-		loss = self.loss(prediction, y)
-		loss.backward()
-		self.optimizer.step()
-		if isinstance(prediction, list):
-			return loss, prediction[-1]
-		return loss, prediction
+    def batch_update(self, x, y):
+        self.optimizer.zero_grad()
+        prediction = self.model.forward(x)
+        if self.crf:
+            prediction = dense_crf(img=prediction, output_probs=y)
+        loss = self.loss(prediction, y)
+        loss.backward()
+        self.optimizer.step()
+        if isinstance(prediction, list):
+            return loss, prediction[-1]
+        return loss, prediction
 
 
 class ValidEpoch(Epoch):
 
-	def __init__(self, model, loss, metrics, device='cpu', verbose=True):
-		super().__init__(
-			model=model,
-			loss=loss,
-			metrics=metrics,
-			stage_name='valid',
-			device=device,
-			verbose=verbose,
-		)
+    def __init__(self, model, loss, metrics, device='cpu', verbose=True):
+        super().__init__(
+            model=model,
+            loss=loss,
+            metrics=metrics,
+            stage_name='valid',
+            device=device,
+            verbose=verbose,
+        )
 
-	def on_epoch_start(self):
-		self.model.eval()
+    def on_epoch_start(self):
+        self.model.eval()
 
-	def batch_update(self, x, y):
-		with torch.no_grad():
-			prediction = self.model.forward(x)
-			if isinstance(prediction, list):
-				prediction = prediction[-1]
-			loss = self.loss(prediction, y, self.model.training)
-		return loss, prediction
+    def batch_update(self, x, y):
+        with torch.no_grad():
+            prediction = self.model.forward(x)
+            if isinstance(prediction, list):
+                prediction = prediction[-1]
+            loss = self.loss(prediction, y, self.model.training)
+        return loss, prediction
