@@ -30,7 +30,7 @@ loss:
 #  class_weight: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
   # ['bg', 'PlasmaMembrane', 'NuclearMembrane', 'MitochondriaDark', 'MitochondriaLight', 'Desmosome',
   #            'Cytoskeleton', 'LipidDroplet']
-  class_weight: [0.5, 10.0, 10.0, 1.0, 1.0, 10.0, 1.0, 10.0]
+  class_weight: [0.1, 10.0, 10.0, 1.0, 1.0, 10.0, 1.0, 10.0]
   cls_size_average: True
   kpt_size_average: True
   cls_loss: bcediceloss
