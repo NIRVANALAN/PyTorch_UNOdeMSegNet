@@ -2,14 +2,14 @@ from .ConcatSquash2D import *
 from .mnodeunet import *
 from .wavelet_model import *
 import segmentation_pytorch as smp
-from ..unet import UNet_Nested, UNet, ResUNet
+from .unet import NestedUNet, UNet, ResUNet
 import pdb
 
 FACTORY = {
     'resunet': ResUNet,
     'unet': UNet,
     'unet_ode': UNOdeMSegNet,
-    'unetplus': UNet_Nested,
+    'unetplus': NestedUNet,
     # 'unet_wavelet': WaveletModel
 }
 

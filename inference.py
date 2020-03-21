@@ -83,7 +83,7 @@ def inference_all_tiff(args):
     # evaluate slide
     num_classes = args.data.num_classes
     criterion = PixelCELoss(num_classes=num_classes)
-    MIOU = MFWAVACCMetricIoUMetric(num_classes=num_classes, ignore_index=None)
+    MIOU = FWAVACCMetric(num_classes=num_classes, ignore_index=None)
     MPA = MPAMetric(num_classes=num_classes, ignore_index=None)
     metrics = [
         MIOU, MPA

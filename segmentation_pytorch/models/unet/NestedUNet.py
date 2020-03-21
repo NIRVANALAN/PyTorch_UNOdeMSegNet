@@ -29,7 +29,7 @@ class VGGBlock(nn.Module):
         return out
 
 
-class UNet(nn.Module):
+class MultiResUNet(nn.Module):
     def __init__(self, dim_in=1, n_classes=8, **args):
         super().__init__()
 
@@ -68,7 +68,7 @@ class UNet(nn.Module):
         self.final4 = nn.Conv2d(nb_filter[0], n_classes, kernel_size=1)
 
     def forward(self, input):
-        assert len(input) = 5
+        assert len(input) == 5
         x0_0 = self.conv0_0(input[0])
         x1_0 = self.conv1_0(
             torch.cat([self.pool(x0_0), self.path_1(input[1])]))
@@ -91,7 +91,7 @@ class UNet(nn.Module):
         return [output1, output2, output3, output4]
 
 
-class MultiResUNet(nn.Module):
+class UNet(nn.Module):
     def __init__(self, dim_in=1, n_classes=8, **args):
         super().__init__()
 
