@@ -19,7 +19,7 @@ matplotlib==3.2.0
 munch==2.5.0
 networkx==2.4
 neuode==1.0.1
-numpy==1.18.1
+numpy==1.22.0
 olefile==0.46
 opencv-python==4.2.0.32
 pandas==1.0.2
